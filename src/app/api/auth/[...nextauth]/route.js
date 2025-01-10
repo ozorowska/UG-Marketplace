@@ -1,3 +1,4 @@
+// src/app/api/auth/[...nextauth]/route.js
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { PrismaClient } from "@prisma/client"
@@ -6,63 +7,77 @@ import { compare } from "bcryptjs"
 const prisma = new PrismaClient()
 
 const handler = NextAuth({
-  // Nasz "provider" to Credentials (czyli: email+hasło)
   providers: [
     CredentialsProvider({
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "text", placeholder: "twojmail@studms.ug.edu.pl" },
-        password: { label: "Hasło", type: "password" }
+        password: { label: "Hasło", type: "password" },
       },
       async authorize(credentials) {
-        // 1. Sprawdzamy domenę emaila
+        // Sprawdzenie domeny emaila
         if (!credentials.email.endsWith("@studms.ug.edu.pl")) {
           throw new Error("Musisz mieć email w domenie @studms.ug.edu.pl!")
         }
 
-        // 2. Szukamy usera w bazie (po emailu)
+        // Szukanie użytkownika w bazie
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
+          where: { email: credentials.email },
         })
         if (!user) {
           throw new Error("Nie ma takiego użytkownika")
         }
 
-        // 3. Porównujemy hasło wprowadzone z zahashowanym w bazie
+        // Porównanie hasła
         const isValid = await compare(credentials.password, user.hashedPassword)
         if (!isValid) {
           throw new Error("Złe hasło!")
         }
 
-        // 4. Jeśli OK, zwracamy obiekt usera (bez hasła)
+        // Zwrócenie użytkownika (bez hasła)
         return { id: user.id, email: user.email }
-      }
-    })
+      },
+    }),
   ],
-  pages: {
-    signIn: "/login" // Gdzie mamy własną stronę logowania
-  },
+  // pages: {
+  //   signIn: "/login",
+  // },
   secret: process.env.NEXTAUTH_SECRET,
   session: {
-    strategy: "jwt"
+    strategy: "jwt",
+    maxAge: 30 * 60, // 30 minut
+    updateAge: 10 * 60, // 10 minut
   },
   callbacks: {
     async jwt({ token, user }) {
-      // Gdy user się zaloguje, do tokena dopiszemy info
       if (user) {
         token.id = user.id
         token.email = user.email
       }
+      console.log("JWT Callback:", token)
       return token
     },
     async session({ session, token }) {
-      // W sesji chcemy mieć email
       if (token) {
         session.user = { id: token.id, email: token.email }
       }
+      console.log("Session Callback:", session)
       return session
-    }
-  }
+    },
+  },
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        // Nie ustawiaj expires, aby ciasteczko było sesyjne
+        // expires: undefined,
+      },
+    },
+  },
 })
 
 export { handler as GET, handler as POST }

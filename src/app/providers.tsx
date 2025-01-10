@@ -1,13 +1,13 @@
-"use client" 
-// Mówimy Next.js, że to komponent kliencki (możemy używać hooków, itp.)
+// src/app/providers.tsx
+'use client'
 
 import { SessionProvider } from "next-auth/react"
-import React from "react"
+import React, { ReactNode } from "react"
 
-export default function Providers({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+type ProvidersProps = {
+  children: ReactNode
+}
+
+export default function Providers({ children }: ProvidersProps) {
   return <SessionProvider>{children}</SessionProvider>
 }

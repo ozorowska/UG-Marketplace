@@ -1,41 +1,31 @@
-/*"use client"
+"use client"
 
-import { useSession, signIn, signOut } from "next-auth/react"
+import React, { useState, useEffect, FormEvent, JSX } from "react"
+import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 
-export default function HomePage() {
-  const { data: session } = useSession()
-
-  if (!session) {
-    return (
-      <div>
-        <h1>Nie jesteś zalogowany</h1>
-        <button onClick={() => signIn()}>Zaloguj</button>
-      </div>
-    )
-  }
-
-  return (
-    <div>
-      <h1>Witaj {session.user?.email}!</h1>
-      <button onClick={() => signOut()}>Wyloguj</button>
-    </div>
-  )
-}*/
 
 export default function HomePage() {
+  const router = useRouter()
+  const { data: session, status } = useSession()
+
+  useEffect(() => {
+    
+    if (status === "authenticated") {
+      router.push("/dashboard")
+    }
+  }, [status, router])
+
   return (
-    <main className="min-h-screen bg-white text-ugBlue">
-      <div className="max-w-4xl mx-auto p-8">
-        <h1 className="text-3xl font-bold mb-6">
-          UG Marketplace
-        </h1>
-        <p className="mb-4">
-          Witaj na platformie ogłoszeniowej Uniwersytetu Gdańskiego.
-          Zaloguj się, aby przeglądać i wystawiać oferty.
+    <main className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
+      <div className="max-w-xl w-full bg-white rounded shadow p-6 text-center">
+        <h1 className="text-3xl font-bold mb-4">Witaj w UG Marketplace!</h1>
+        <p className="mb-8">
+          Platforma ogłoszeniowa Uniwersytetu Gdańskiego.
         </p>
         <a
           href="/login"
-          className="bg-ugBlue text-white px-4 py-2 rounded hover:bg-ugLightBlue transition"
+          className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
         >
           Zaloguj się
         </a>
