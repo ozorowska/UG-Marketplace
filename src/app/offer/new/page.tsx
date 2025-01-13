@@ -14,12 +14,13 @@ declare module "next-auth" {
 }
 
 export default function NewOfferPage() {
-  const { data: session, status } = useSession(); // Pobieranie sesji
+  const { data: session } = useSession();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("KSIAZKI");
   const [major, setMajor] = useState("");
+  const [image, setImage] = useState<File | null>(null); // Obsługa pliku
   const [error, setError] = useState("");
   const router = useRouter();
 
@@ -32,18 +33,19 @@ export default function NewOfferPage() {
       return;
     }
 
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("description", description);
+    formData.append("price", price);
+    formData.append("category", category);
+    formData.append("major", major);
+    formData.append("userId", session.user.id);
+    if (image) formData.append("image", image);
+
     try {
       const res = await fetch("/api/offers", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          description,
-          price: parseFloat(price),
-          category,
-          major,
-          userId: session.user.id, // Pobieramy ID zalogowanego użytkownika
-        }),
+        body: formData,
       });
 
       if (!res.ok) {
@@ -57,7 +59,6 @@ export default function NewOfferPage() {
       setError(err.message);
     }
   }
-
 
   if (!session) {
     return <p>Musisz być zalogowany, aby dodać ofertę.</p>;
@@ -121,6 +122,19 @@ export default function NewOfferPage() {
             value={major}
             onChange={(e) => setMajor(e.target.value)}
             required
+          />
+        </div>
+
+        <div>
+          <label className="block mb-2 font-medium">Zdjęcie</label>
+          <input
+            type="file"
+            className="w-full border p-2 rounded"
+            onChange={(e) => {
+              if (e.target.files && e.target.files[0]) {
+                setImage(e.target.files[0]);
+              }
+            }}
           />
         </div>
 

@@ -20,6 +20,11 @@ const handler = NextAuth({
           throw new Error("Musisz mieć email w domenie @studms.ug.edu.pl!")
         }
 
+        if (!credentials || !credentials.email || !credentials.password) {
+          throw new Error("Email i hasło są wymagane.")
+        }
+        
+
         // Szukanie użytkownika w bazie
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
@@ -35,13 +40,11 @@ const handler = NextAuth({
         }
 
         // Zwrócenie użytkownika (bez hasła)
-        return { id: user.id, email: user.email }
+        return { id: user.id, email: user.email, name: user.name }
       },
     }),
   ],
-  // pages: {
-  //   signIn: "/login",
-  // },
+
   secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",
@@ -53,13 +56,18 @@ const handler = NextAuth({
       if (user) {
         token.id = user.id
         token.email = user.email
+        token.name = user.name
       }
       console.log("JWT Callback:", token)
       return token
     },
     async session({ session, token }) {
       if (token) {
-        session.user = { id: token.id, email: token.email }
+        session.user = { 
+          id: token.id, 
+          email: token.email,
+          name: token.name,
+        }
       }
       console.log("Session Callback:", session)
       return session

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 
 export default function RegisterPage(): JSX.Element {
+  const [name, setName] = useState<string>("")
   const [email, setEmail] = useState<string>("")
   const [password, setPassword] = useState<string>("")
   const [error, setError] = useState<string>("")
@@ -26,7 +27,7 @@ export default function RegisterPage(): JSX.Element {
       const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, name}),
       })
 
       if (!res.ok) {
@@ -50,6 +51,20 @@ export default function RegisterPage(): JSX.Element {
         <h1 className="text-2xl font-bold mb-6">Zarejestruj się</h1>
 
         <form onSubmit={handleSubmit}>
+        <div className="mb-4">
+          <label className="block font-semibold mb-1">
+            Imię
+            </label>
+            <input
+              type="text"
+              className="w-full border border-gray-300 p-2 rounded"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              placeholder="Twoje imię"
+            />
+          </div>
+
           <div className="mb-4">
             <label className="block font-semibold mb-1">
               Email (tylko @studms.ug.edu.pl)

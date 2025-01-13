@@ -6,7 +6,7 @@ const prisma = new PrismaClient()
 
 export async function POST(request) {
   try {
-    const { email, password } = await request.json()
+    const { email, password, name } = await request.json()
 
     // Sprawdź domenę
     if (!email.endsWith("@studms.ug.edu.pl")) {
@@ -16,11 +16,18 @@ export async function POST(request) {
       )
     }
 
+    if (!name) {
+      return NextResponse.json(
+        { error: "Imię jest wymagane" },
+        { status: 400 }
+      )
+    }
+
     // Czy user już istnieje?
-    const istnieje = await prisma.user.findUnique({
+    const existingUser = await prisma.user.findUnique({
       where: { email },
     })
-    if (istnieje) {
+    if (existingUser) {
       return NextResponse.json(
         { error: "Taki użytkownik już istnieje." },
         { status: 400 }
@@ -35,6 +42,7 @@ export async function POST(request) {
       data: {
         email,
         hashedPassword,
+        name
       },
     })
 

@@ -59,25 +59,36 @@ export default function DashboardPage() {
 
       {/* Main content */}
       <main className="container mx-auto py-6 px-4">
-        <h2 className="text-3xl font-bold text-gray-800 mb-6">Witaj, {session.user.email}!</h2>
+      <h2 className="text-2xl font-semibold mb-4">
+        Witaj, {session.user.name || session.user.email}!
+      </h2>
+
         <p className="text-gray-600 mb-8">Przeglądaj najnowsze oferty lub wystaw swoje własne.</p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {offers.map((offer) => (
-            <div
-              key={offer.id}
-              className="bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden hover:shadow-xl cursor-pointer"
-              onClick={() => router.push(`/offer/${offer.id}`)}
-            >
-              <div className="p-4">
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">{offer.title}</h3>
-                <p className="text-sm text-gray-600 mb-4">{offer.category}</p>
-                <p className="text-lg font-bold text-blue-700 mb-4">{offer.price} zł</p>
-                <p className="text-gray-500 text-sm">{offer.major}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+  {offers.map((offer) => (
+    <div
+      key={offer.id}
+      className="bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden hover:shadow-xl cursor-pointer"
+      onClick={() => router.push(`/offer/${offer.id}`)}
+    >
+      {offer.imageUrl && (
+        <img
+          src={offer.imageUrl}
+          alt={offer.title}
+          className="w-full h-48 object-cover"
+        />
+      )}
+      <div className="p-4">
+        <h3 className="text-xl font-semibold text-gray-800 mb-2">{offer.title}</h3>
+        <p className="text-sm text-gray-600 mb-4">{offer.category}</p>
+        <p className="text-lg font-bold text-blue-700 mb-4">{offer.price} zł</p>
+        <p className="text-gray-500 text-sm">{offer.major}</p>
+      </div>
+    </div>
+  ))}
+</div>
+
 
         {offers.length === 0 && (
           <p className="text-gray-500 text-center mt-6">Brak dostępnych ofert. Dodaj swoją pierwszą ofertę!</p>

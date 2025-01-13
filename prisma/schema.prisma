@@ -10,6 +10,7 @@ generator client {
 model User {
   id             String   @id @default(uuid())
   email          String   @unique
+  name           String?
   hashedPassword String
   createdAt      DateTime @default(now())
   offers         Offer[] 
@@ -18,6 +19,7 @@ model User {
 
 model Offer {
   id          String    @id @default(uuid())
+  imageUrl    String?   // URL zdjęcia (opcjonalnie)
   title       String
   description String
   price       Float
