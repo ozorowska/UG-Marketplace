@@ -59,11 +59,7 @@ export default function NewOfferPage() {
       setError(err.message);
     }
   }
-
-  if (!session) {
-    return <p>Musisz być zalogowany, aby dodać ofertę.</p>;
-  }
-
+  
   return (
     <div className="p-6 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Dodaj nową ofertę</h1>

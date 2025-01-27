@@ -41,14 +41,6 @@ export default function OfferPage() {
     fetchOffer();
   }, [params?.id, router]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Ładowanie...
-      </div>
-    );
-  }
-
   if (!offer) {
     return (
       <div className="min-h-screen flex items-center justify-center">
