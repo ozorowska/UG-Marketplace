@@ -19,16 +19,23 @@ model User {
 
 model Offer {
   id          String    @id @default(uuid())
-  imageUrl    String?   // URL zdjęcia (opcjonalnie)
+  imageUrl    String?   
   title       String
   description String
   price       Float
-  category    Category
+  tags        Tag[]     @relation("OfferTags") // Relacja wiele-do-wielu
   major       String
   createdAt   DateTime  @default(now())
   user        User      @relation(fields: [userId], references: [id])
   userId      String
-  }
+}
+
+
+model Tag {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  offers      Offer[]  @relation("OfferTags")
+}
 
 enum Category {
   KSIAZKI

@@ -1,31 +1,39 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 
 export default function TopNavbar() {
+  const router = useRouter();
+
   return (
-    <nav className="bg-white shadow-md fixed w-full h-16 flex items-center px-6 z-50">
-      <div className="flex items-center gap-4">
-        {/* Logo */}
-        <h1 className="text-xl font-bold text-[#002d73] cursor-pointer">
+    <header className="fixed top-0 left-0 right-0 bg-white shadow-md border-b z-50">
+      <div className="flex items-center justify-between px-6 py-4">
+        {/* logo */}
+        <h1
+          className="text-xl font-bold text-[#002d73] cursor-pointer"
+          onClick={() => router.push("/dashboard")}
+        >
           UG Marketplace
         </h1>
-        {/* Pasek wyszukiwania */}
-        <input
-          type="text"
-          placeholder="Wyszukaj książki lub notatki..."
-          className="flex-grow bg-gray-100 rounded-full px-4 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#002d73]"
-        />
-      </div>
-      {/* Ikony */}
-      <div className="flex items-center gap-6 ml-auto">
-        <button className="text-gray-500 hover:text-gray-700">
-          <i className="fas fa-bell"></i>
+
+        {/* pasek wyszukiwania */}
+        <div className="flex items-center w-full max-w-md">
+          <input
+            type="text"
+            placeholder="Szukaj ofert..."
+            className="w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#002d73] border-gray-300"
+          />
+        </div>
+
+        {/* przycisk dodawania oferty */}
+        <button
+          onClick={() => router.push("/offer/new")}
+          className="bg-[#002d73] hover:bg-[#001a4f] text-white text-sm font-medium py-2 px-4 rounded transition-colors"
+        >
+          Dodaj ofertę
         </button>
-        <button className="text-gray-500 hover:text-gray-700">
-          <i className="fas fa-user-circle"></i>
-        </button>
       </div>
-    </nav>
+    </header>
   );
 }

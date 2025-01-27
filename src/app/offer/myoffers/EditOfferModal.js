@@ -1,30 +1,35 @@
 "use client";
 
-import React, { useState } from "react";
-import { useSession } from "next-auth/react";
+import React, { useState, useEffect } from "react";
 
-interface NewOfferModalProps {
-  onClose: () => void;
-}
+export default function EditOfferModal({ offer, onClose, onSuccess }) {
+  // Oczekujemy, że "offer" to obiekt z polami: id, title, description, price, category, major, imageUrl
+  // onSuccess to np. callback do odświeżenia listy
 
-export default function NewOfferModal({ onClose }: NewOfferModalProps) {
-  const { data: session } = useSession();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
-  const [tags, setTags] = useState("");
+  const [category, setCategory] = useState("KSIAZKI");
   const [major, setMajor] = useState("");
-  const [image, setImage] = useState<File | null>(null);
+  const [image, setImage] = useState(null);
   const [error, setError] = useState("");
 
-  async function handleSubmit(e: React.FormEvent) {
+  useEffect(() => {
+    if (offer) {
+      setTitle(offer.title || "");
+      setDescription(offer.description || "");
+      setPrice(String(offer.price || ""));
+      setCategory(offer.category || "KSIAZKI");
+      setMajor(offer.major || "");
+    }
+  }, [offer]);
+
+  async function handleSubmit(e) {
     e.preventDefault();
     setError("");
 
-    // Rzutowanie: mówimy TS, że user może mieć pole 'id'.
-    const userId = (session?.user as { id?: string })?.id;
-    if (!userId) {
-      setError("Nie można dodać oferty. Użytkownik niezalogowany.");
+    if (!offer?.id) {
+      setError("Brak ID oferty do edycji.");
       return;
     }
 
@@ -33,46 +38,48 @@ export default function NewOfferModal({ onClose }: NewOfferModalProps) {
       formData.append("title", title);
       formData.append("description", description);
       formData.append("price", price);
-      formData.append("tags", tags);
+      formData.append("category", category);
       formData.append("major", major);
-      formData.append("userId", userId);
-      if (image) formData.append("image", image);
+      // userId – jeśli chcesz go przekazywać, np. sprawdzać na backendzie
+      // formData.append("userId", session?.user?.id);  // opcjonalnie
+      if (image) {
+        formData.append("image", image);
+      }
 
-      const res = await fetch("/api/offers", {
-        method: "POST",
+      const res = await fetch(`/api/offers?id=${offer.id}`, {
+        method: "PUT",
         body: formData,
       });
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Nie udało się dodać oferty");
+        throw new Error(data.error || "Nie udało się zaktualizować oferty");
       }
 
-      alert("Oferta została dodana!");
-      onClose(); // zamknięcie modala
-    } catch (err: any) {
+      // Powiadomienie, zamknięcie modala, odświeżenie listy
+      alert("Oferta została zaktualizowana!");
+      onClose();
+      if (onSuccess) onSuccess(); // np. ponowne pobranie danych
+    } catch (err) {
       setError(err.message);
     }
   }
 
   return (
     <>
-      {/* Overlay – kliknięcie w tło zamyka modal */}
       <div
         className="fixed inset-0 bg-black bg-opacity-50 z-50"
         onClick={onClose}
       ></div>
 
-      {/* Główny kontener modala */}
       <div className="fixed inset-0 z-50 flex items-center justify-center px-2">
         <div
           className="relative w-full max-w-lg bg-white rounded-lg shadow-lg"
-          onClick={(e) => e.stopPropagation()} // kliknięcie wewnątrz nie zamyka
+          onClick={(e) => e.stopPropagation()}
         >
-          {/* Górny pasek / przycisk zamknięcia */}
           <div className="flex justify-between items-center px-6 py-4 border-b">
             <h2 className="text-xl font-semibold text-gray-800">
-              Dodaj nową ofertę
+              Edytuj ofertę
             </h2>
             <button
               onClick={onClose}
@@ -82,7 +89,6 @@ export default function NewOfferModal({ onClose }: NewOfferModalProps) {
             </button>
           </div>
 
-          {/* Sekcja przewijana (jeśli potrzeba) */}
           <div className="max-h-[80vh] overflow-y-auto px-6 py-4">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
@@ -123,7 +129,6 @@ export default function NewOfferModal({ onClose }: NewOfferModalProps) {
                   type="number"
                   className="w-full rounded-lg border border-gray-300 px-3 py-2
                              focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="np. 50"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                   required
@@ -131,18 +136,21 @@ export default function NewOfferModal({ onClose }: NewOfferModalProps) {
               </div>
 
               <div>
-  <label className="block mb-2 font-medium text-gray-700">
-    Tagi (oddziel przecinkami)
-  </label>
-  <input
-    type="text"
-    className="w-full rounded-lg border border-gray-300 px-3 py-2
-               focus:outline-none focus:ring-2 focus:ring-blue-500"
-    placeholder="Np. książki, programowanie, edukacja"
-    value={tags}
-    onChange={(e) => setTags(e.target.value)}
-  />
-</div>
+                <label className="block mb-2 font-medium text-gray-700">
+                  Kategoria
+                </label>
+                <select
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 
+                             focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                >
+                  <option value="KSIAZKI">Książki</option>
+                  <option value="NOTATKI">Notatki</option>
+                  <option value="KOREPETYCJE">Korepetycje</option>
+                  <option value="INNE">Inne</option>
+                </select>
+              </div>
 
               <div>
                 <label className="block mb-2 font-medium text-gray-700">
@@ -152,7 +160,6 @@ export default function NewOfferModal({ onClose }: NewOfferModalProps) {
                   type="text"
                   className="w-full rounded-lg border border-gray-300 px-3 py-2
                              focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Np. Informatyka, Ekonomia..."
                   value={major}
                   onChange={(e) => setMajor(e.target.value)}
                   required
@@ -161,7 +168,7 @@ export default function NewOfferModal({ onClose }: NewOfferModalProps) {
 
               <div>
                 <label className="block mb-2 font-medium text-gray-700">
-                  Zdjęcie
+                  Nowe zdjęcie (opcjonalnie)
                 </label>
                 <input
                   type="file"
@@ -188,7 +195,7 @@ export default function NewOfferModal({ onClose }: NewOfferModalProps) {
                            hover:bg-blue-700 focus:outline-none focus:ring-2 
                            focus:ring-blue-500 focus:ring-offset-2"
               >
-                Dodaj ofertę
+                Zapisz zmiany
               </button>
             </form>
           </div>
