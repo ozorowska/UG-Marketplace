@@ -6,6 +6,26 @@ import path from "path";
 const prisma = new PrismaClient();
 const uploadDir = "./public/uploads";
 
+export async function GET(request, { params }) {
+  try {
+    const { id } = params;
+    const offer = await prisma.offer.findUnique({
+      where: { id },
+      include: { user: true, tags: true }, // dołączamy dodatkowe informacje, jeśli są potrzebne
+    });
+
+    if (!offer) {
+      return NextResponse.json({ error: "Oferta nie została znaleziona" }, { status: 404 });
+    }
+
+    return NextResponse.json(offer, { status: 200 });
+  } catch (error) {
+    console.error("Błąd w metodzie GET:", error);
+    return NextResponse.json({ error: "Błąd serwera" }, { status: 500 });
+  }
+}
+
+
 export async function PUT(request, context) {
   try {
     const { params } = context;
@@ -98,5 +118,23 @@ export async function PUT(request, context) {
   } catch (error) {
     console.error("🚨 Błąd w metodzie PUT:", error);
     return NextResponse.json({ error: "Błąd serwera", details: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request, { params }) {
+  try {
+    const { id } = params;
+    if (!id) {
+      return NextResponse.json({ error: "Brak ID oferty w zapytaniu" }, { status: 400 });
+    }
+
+    await prisma.offer.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ message: "Oferta została usunięta" });
+  } catch (error) {
+    console.error("Błąd w metodzie DELETE:", error);
+    return NextResponse.json({ error: "Błąd serwera" }, { status: 500 });
   }
 }

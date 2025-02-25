@@ -43,7 +43,7 @@ export default function MyOffersPage() {
     }
 
     try {
-      const res = await fetch(`/api/offers?id=${offerId}`, {
+      const res = await fetch(`/api/offers/${offerId}`, {
         method: "DELETE",
       });
       if (!res.ok) {

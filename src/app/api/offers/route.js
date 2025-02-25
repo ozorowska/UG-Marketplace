@@ -92,25 +92,3 @@ export async function POST(request) {
   }
 }
 
-export async function DELETE(request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const offerId = searchParams.get("id");
-
-    if (!offerId) {
-      return NextResponse.json(
-        { error: "Brak ID oferty w zapytaniu" },
-        { status: 400 }
-      );
-    }
-
-    await prisma.offer.delete({
-      where: { id: offerId },
-    });
-
-    return NextResponse.json({ message: "Oferta została usunięta" });
-  } catch (error) {
-    console.error("Błąd w metodzie DELETE:", error);
-    return NextResponse.json({ error: "Błąd serwera" }, { status: 500 });
-  }
-}
