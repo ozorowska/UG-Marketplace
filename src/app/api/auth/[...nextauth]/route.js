@@ -58,6 +58,11 @@ const handler = NextAuth({
         token.email = user.email
         token.name = user.name
       }
+
+      if (!token.id && token.sub) {
+        token.id = token.sub;
+      }
+      
       console.log("JWT Callback:", token)
       return token
     },

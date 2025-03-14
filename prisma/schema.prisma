@@ -1,3 +1,4 @@
+/*
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
@@ -35,6 +36,65 @@ model Tag {
   id          String   @id @default(uuid())
   name        String   @unique
   offers      Offer[]  @relation("OfferTags")
+}
+
+enum Category {
+  KSIAZKI
+  NOTATKI
+  KOREPETYCJE
+  INNE
+}
+*/
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  name           String?
+  hashedPassword String
+  createdAt      DateTime @default(now())
+
+  // Oferty utworzone przez użytkownika
+  offers         Offer[]
+
+  // Ulubione oferty danego użytkownika (relacja wiele-do-wielu)
+  favorites      Offer[]  @relation("UserFavorites")
+}
+
+model Offer {
+  id          String   @id @default(uuid())
+  imageUrl    String?   
+  title       String
+  description String
+  price       Float
+  major       String
+  createdAt   DateTime @default(now())
+
+  // Każda oferta musi mieć swojego autora (relacja jeden-do-wielu)
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+
+  // Tagi przypisane do oferty (relacja wiele-do-wielu)
+  tags        Tag[]    @relation("OfferTags")
+
+  // Którzy użytkownicy oznaczyli tę ofertę jako ulubioną (relacja wiele-do-wielu)
+  favoritedBy  User[]  @relation("UserFavorites")
+}
+
+model Tag {
+  id     String  @id @default(uuid())
+  name   String  @unique
+
+  // Relacja wiele-do-wielu z ofertami
+  offers Offer[] @relation("OfferTags")
 }
 
 enum Category {
