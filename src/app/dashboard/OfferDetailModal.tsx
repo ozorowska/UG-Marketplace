@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { FaArrowLeft, FaHeart, FaEnvelope } from "react-icons/fa";
+import { useRouter } from "next/navigation";
 
 interface OfferDetailModalProps {
   offerId: string;
@@ -14,13 +15,14 @@ type Offer = {
   description: string;
   price: number;
   imageUrl?: string;
-  user?: { name: string };
+  user?: { 
+    id: string;  // ID sprzedawcy – niezbędne do przekierowania do czatu
+    name: string;
+  };
 };
 
-export default function OfferDetailModal({
-  offerId,
-  onClose,
-}: OfferDetailModalProps) {
+export default function OfferDetailModal({ offerId, onClose }: OfferDetailModalProps) {
+  const router = useRouter();
   const [offer, setOffer] = useState<Offer | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -35,7 +37,7 @@ export default function OfferDetailModal({
         setOffer(data);
       } catch (error) {
         console.error(error);
-        onClose(); // jeśli błąd, zamknij modal
+        onClose(); // w razie błędu zamykamy modal
       } finally {
         setLoading(false);
       }
@@ -43,6 +45,15 @@ export default function OfferDetailModal({
 
     fetchOffer();
   }, [offerId, onClose]);
+
+  const handleSendMessage = () => {
+    // Przekierowanie do widoku czatu z konkretnym odbiorcą (sprzedawcą)
+    if (offer?.user?.id) {
+      router.push(`/messages/${offer.user.id}`);
+    } else {
+      alert("Nie można rozpocząć rozmowy – brak danych sprzedawcy.");
+    }
+  };
 
   if (loading) {
     return (
@@ -58,24 +69,13 @@ export default function OfferDetailModal({
   if (!offer) {
     return (
       <>
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-50"
-          onClick={onClose}
-        ></div>
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50" onClick={onClose}></div>
         <div className="fixed inset-0 z-50 flex items-center justify-center px-2">
-          <div
-            className="bg-white p-6 rounded shadow relative max-w-md w-full"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
-              onClick={onClose}
-            >
+          <div className="bg-white p-6 rounded shadow relative max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600" onClick={onClose}>
               &#10005;
             </button>
-            <p className="text-gray-700">
-              Ogłoszenie nie zostało znalezione.
-            </p>
+            <p className="text-gray-700">Ogłoszenie nie zostało znalezione.</p>
           </div>
         </div>
       </>
@@ -85,19 +85,12 @@ export default function OfferDetailModal({
   return (
     <>
       {/* Overlay */}
-      <div
-        className="fixed inset-0 bg-black bg-opacity-50 z-50"
-        onClick={onClose}
-      ></div>
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-50" onClick={onClose}></div>
 
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center px-2">
-        <div
-          className="relative w-full max-w-2xl bg-white rounded-lg shadow-lg
-                     flex flex-col"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Górny pasek: przyciski */}
+        <div className="relative w-full max-w-2xl bg-white rounded-lg shadow-lg flex flex-col" onClick={(e) => e.stopPropagation()}>
+          {/* Górny pasek z przyciskami */}
           <div className="flex items-center justify-between bg-[#002d73] text-white px-6 py-4 rounded-t-lg">
             <button
               onClick={onClose}
@@ -109,15 +102,17 @@ export default function OfferDetailModal({
               <button className="flex items-center gap-2 text-sm font-semibold hover:text-gray-200">
                 <FaHeart /> Dodaj do ulubionych
               </button>
-              <button className="flex items-center gap-2 text-sm font-semibold hover:text-gray-200">
+              <button
+                onClick={handleSendMessage}
+                className="flex items-center gap-2 text-sm font-semibold hover:text-gray-200"
+              >
                 <FaEnvelope /> Wyślij wiadomość
               </button>
             </div>
           </div>
 
-          {/* Zawartość (przewijana, jeśli potrzeba) */}
+          {/* Zawartość modalu */}
           <div className="max-h-[80vh] overflow-y-auto">
-            {/* Zdjęcie */}
             {offer.imageUrl && (
               <div className="w-full h-64 bg-gray-200 flex items-center justify-center">
                 <img
@@ -128,15 +123,10 @@ export default function OfferDetailModal({
               </div>
             )}
 
-            {/* Szczegóły */}
             <div className="p-6">
-              <h1 className="text-3xl font-bold text-[#002d73] mb-4">
-                {offer.title}
-              </h1>
+              <h1 className="text-3xl font-bold text-[#002d73] mb-4">{offer.title}</h1>
               <p className="text-gray-600 mb-6">{offer.description}</p>
-              <p className="text-2xl font-semibold text-[#002d73] mb-4">
-                Cena: {offer.price} zł
-              </p>
+              <p className="text-2xl font-semibold text-[#002d73] mb-4">Cena: {offer.price} zł</p>
               <p className="text-sm text-gray-500">
                 Wystawiono przez:{" "}
                 <span className="font-medium text-gray-700">
@@ -150,4 +140,3 @@ export default function OfferDetailModal({
     </>
   );
 }
-
