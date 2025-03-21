@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { FaArrowLeft, FaHeart, FaEnvelope } from "react-icons/fa";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 interface OfferDetailModalProps {
   offerId: string;
@@ -16,49 +17,80 @@ type Offer = {
   price: number;
   imageUrl?: string;
   user?: { 
-    id: string;  // ID sprzedawcy – niezbędne do przekierowania do czatu
+    id: string;
     name: string;
   };
 };
 
 export default function OfferDetailModal({ offerId, onClose }: OfferDetailModalProps) {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [offer, setOffer] = useState<Offer | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchOffer = async () => {
+    if (status === "loading") return;
+    // jeśli użytkownik nie jest zalogowany, przekieruj np. do /login
+    if (!session) {
+      router.push("/login");
+    }
+  }, [session, status, router]);
+
+  useEffect(() => {
+    // Pobierz szczegóły oferty
+    async function fetchOffer() {
       try {
         const response = await fetch(`/api/offers/${offerId}`);
         if (!response.ok) {
-          throw new Error("Nie udało się pobrać szczegółów ogłoszenia.");
+          throw new Error("Nie udało się pobrać szczegółów oferty.");
         }
         const data = await response.json();
         setOffer(data);
       } catch (error) {
         console.error(error);
-        onClose(); // w razie błędu zamykamy modal
+        onClose();
       } finally {
         setLoading(false);
       }
-    };
-
+    }
     fetchOffer();
   }, [offerId, onClose]);
 
-  const handleSendMessage = () => {
-    // Przekierowanie do widoku czatu z konkretnym odbiorcą (sprzedawcą)
-    if (offer?.user?.id) {
-      router.push(`/messages/${offer.user.id}`);
-    } else {
-      alert("Nie można rozpocząć rozmowy – brak danych sprzedawcy.");
+  const handleSendMessage = async () => {
+    if (!session) {
+      alert("Musisz być zalogowany, aby wysłać wiadomość.");
+      return;
+    }
+    if (!offerId) {
+      alert("Brak ID oferty");
+      return;
+    }
+
+    try {
+      // Wywołaj nasz nowy endpoint,
+      // który sam ustali buyerId na podstawie session.user.email
+      // i sellerId z oferty:
+      const response = await fetch("/api/messages/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ offerId }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Błąd tworzenia / pobierania konwersacji");
+      }
+
+      const conversation = await response.json();
+      router.push(`/messages/${conversation.id}`);
+    } catch (error) {
+      console.error("Błąd podczas rozpoczynania konwersacji:", error);
     }
   };
 
   if (loading) {
     return (
       <>
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50"></div>
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50" />
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="text-white">Ładowanie...</div>
         </div>
@@ -69,10 +101,16 @@ export default function OfferDetailModal({ offerId, onClose }: OfferDetailModalP
   if (!offer) {
     return (
       <>
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50" onClick={onClose}></div>
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50" onClick={onClose} />
         <div className="fixed inset-0 z-50 flex items-center justify-center px-2">
-          <div className="bg-white p-6 rounded shadow relative max-w-md w-full" onClick={(e) => e.stopPropagation()}>
-            <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600" onClick={onClose}>
+          <div
+            className="bg-white p-6 rounded shadow relative max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+              onClick={onClose}
+            >
               &#10005;
             </button>
             <p className="text-gray-700">Ogłoszenie nie zostało znalezione.</p>
@@ -89,7 +127,10 @@ export default function OfferDetailModal({ offerId, onClose }: OfferDetailModalP
 
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center px-2">
-        <div className="relative w-full max-w-2xl bg-white rounded-lg shadow-lg flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="relative w-full max-w-2xl bg-white rounded-lg shadow-lg flex flex-col"
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Górny pasek z przyciskami */}
           <div className="flex items-center justify-between bg-[#002d73] text-white px-6 py-4 rounded-t-lg">
             <button
@@ -124,9 +165,13 @@ export default function OfferDetailModal({ offerId, onClose }: OfferDetailModalP
             )}
 
             <div className="p-6">
-              <h1 className="text-3xl font-bold text-[#002d73] mb-4">{offer.title}</h1>
+              <h1 className="text-3xl font-bold text-[#002d73] mb-4">
+                {offer.title}
+              </h1>
               <p className="text-gray-600 mb-6">{offer.description}</p>
-              <p className="text-2xl font-semibold text-[#002d73] mb-4">Cena: {offer.price} zł</p>
+              <p className="text-2xl font-semibold text-[#002d73] mb-4">
+                Cena: {offer.price} zł
+              </p>
               <p className="text-sm text-gray-500">
                 Wystawiono przez:{" "}
                 <span className="font-medium text-gray-700">

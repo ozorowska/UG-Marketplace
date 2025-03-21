@@ -8,46 +8,54 @@ generator client {
 }
 
 model User {
-  id             String   @id @default(uuid())
-  email          String   @unique
+  id             String         @id @default(uuid())
+  email          String         @unique
   name           String?
   hashedPassword String
-  createdAt      DateTime @default(now())
+  createdAt      DateTime       @default(now())
 
   // Oferty utworzone przez użytkownika
   offers         Offer[]
 
-  // Ulubione oferty danego użytkownika (relacja wiele-do-wielu)
-  favorites      Offer[]  @relation("UserFavorites")
+  // Ulubione oferty (relacja wiele-do-wielu)
+  favorites      Offer[]        @relation("UserFavorites")
 
-  Message Message[]
+  // Relacja wiadomości (nadane przez użytkownika)
+  messages       Message[]
+
+  // Relacja rozmów – jako kupujący i sprzedający
+  buyerConversations  Conversation[] @relation("BuyerConversations")
+  sellerConversations Conversation[] @relation("SellerConversations")
 }
 
 model Offer {
   id          String   @id @default(uuid())
-  imageUrl    String?   
+  imageUrl    String?
   title       String
   description String
   price       Float
   major       String
   createdAt   DateTime @default(now())
 
-  // Każda oferta musi mieć swojego autora (relacja jeden-do-wielu)
+  // Relacja – autor oferty
   user        User     @relation(fields: [userId], references: [id])
   userId      String
 
-  // Tagi przypisane do oferty (relacja wiele-do-wielu)
+  // Tagi
   tags        Tag[]    @relation("OfferTags")
 
-  // Którzy użytkownicy oznaczyli tę ofertę jako ulubioną (relacja wiele-do-wielu)
-  favoritedBy  User[]  @relation("UserFavorites")
+  // Ulubione oferty
+  favoritedBy User[]   @relation("UserFavorites")
+
+  // Rozmowy dotyczące oferty
+  conversations Conversation[]
 }
 
 model Tag {
   id     String  @id @default(uuid())
   name   String  @unique
 
-  // Relacja wiele-do-wielu z ofertami
+  // Relacja z ofertami
   offers Offer[] @relation("OfferTags")
 }
 
@@ -58,15 +66,29 @@ enum Category {
   INNE
 }
 
-model Message {
-  id        String   @id @default(uuid())
-  text      String
-  // Jeśli chcesz mieć relację z użytkownikiem – np. nadawcą:
-  senderId  String
-  sender    User     @relation(fields: [senderId], references: [id])
-  createdAt DateTime @default(now())
+model Conversation {
+  id        String    @id @default(uuid())
+  offerId   String
+  buyerId   String
+  sellerId  String
+  createdAt DateTime  @default(now())
+
+  // Relacje
+  offer     Offer     @relation(fields: [offerId], references: [id])
+  buyer     User      @relation("BuyerConversations", fields: [buyerId], references: [id])
+  seller    User      @relation("SellerConversations", fields: [sellerId], references: [id])
+  messages  Message[]
 }
 
+model Message {
+  id             String        @id @default(uuid())
+  text           String
+  senderId       String
+  createdAt      DateTime      @default(now())
+  conversationId String
 
-
-
+  // Relacja – nadawca wiadomości
+  sender         User          @relation(fields: [senderId], references: [id])
+  // Relacja – do której rozmowy należy wiadomość
+  conversation   Conversation  @relation(fields: [conversationId], references: [id])
+}

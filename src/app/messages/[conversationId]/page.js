@@ -1,89 +1,72 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useParams } from "next/navigation";
+import React, { useEffect, useState, useRef } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Pusher from "pusher-js";
 import { useSession } from "next-auth/react";
 import TopNavbar from "../../components/TopNavbar";
 import SidebarLayout from "../../components/SidebarLayout";
 
 export default function ChatPage() {
-  const { recipientId } = useParams(); // dynamiczny segment – identyfikator rozmówcy
+  const { conversationId } = useParams(); // id konwersacji
+  const router = useRouter();
   const { data: session } = useSession();
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
   const messagesEndRef = useRef(null);
 
-  // Pobieramy historię rozmowy
+  // Pobieramy historię wiadomości z rozmowy
   useEffect(() => {
-    async function fetchConversation() {
+    async function fetchMessages() {
       try {
-        const res = await fetch(
-          `/api/messages/conversations?senderId=${session.user.id}&recipientId=${recipientId}`
-        );
-        if (!res.ok) throw new Error("Błąd pobierania rozmowy");
+        const res = await fetch(`/api/messages/conversations/${conversationId}/messages`);
+        if (!res.ok) throw new Error("Błąd pobierania wiadomości");
         const data = await res.json();
         setChat(data);
       } catch (error) {
         console.error(error);
       }
     }
-    if (session) {
-      fetchConversation();
-    }
-  }, [session, recipientId]);
+    if (session) fetchMessages();
+  }, [session, conversationId]);
 
-  // Inicjalizacja Pushera
+  // Subskrypcja Pushera dla rozmowy
   useEffect(() => {
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
     });
-
-    const channel = pusher.subscribe("chat");
+    const channel = pusher.subscribe(`conversation-${conversationId}`);
 
     channel.bind("new-message", function (data) {
-      // Filtrujemy wiadomości – dodajemy tylko te dotyczące tej rozmowy
-      if (
-        (data.sender === session?.user.id && data.recipient === recipientId) ||
-        (data.sender === recipientId && data.recipient === session?.user.id)
-      ) {
-        setChat((prevChat) => [...prevChat, data.message]);
-      }
+      setChat((prev) => [...prev, data.message]);
     });
 
     return () => {
       channel.unbind_all();
       channel.unsubscribe();
     };
-  }, [session, recipientId]);
+  }, [conversationId]);
 
-  // Automatyczne przewijanie do najnowszej wiadomości
+  // Automatyczne przewijanie do ostatniej wiadomości
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat]);
 
   const sendMessage = async () => {
-    if (!session) {
-      alert("Musisz być zalogowany, aby wysyłać wiadomości.");
-      return;
-    }
-    if (message.trim()) {
-      const payload = {
-        text: message,
-        sender: session.user.id,
-        recipient: recipientId,
-      };
+    if (!session) return alert("Musisz być zalogowany.");
+    if (!message.trim()) return;
 
-      const res = await fetch("/api/messages/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) {
-        setMessage("");
-      } else {
-        console.error("Błąd przy wysyłaniu wiadomości");
-      }
+    const payload = { text: message, senderId: session.user.id };
+
+    const res = await fetch(`/api/messages/conversations/${conversationId}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) {
+      setMessage("");
+    } else {
+      console.error("Błąd wysyłania wiadomości");
     }
   };
 
@@ -92,18 +75,14 @@ export default function ChatPage() {
       <TopNavbar />
       <SidebarLayout>
         <div className="flex flex-col h-screen bg-gray-100">
-          {/* Header czatu */}
+          {/* Nagłówek czatu z linkiem powrotnym */}
           <header className="bg-blue-600 text-white p-4 flex items-center">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-gray-200 rounded-full mr-3 flex items-center justify-center">
-                <span className="text-xl font-bold">
-                  {recipientId.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div>
-                <h2 className="font-semibold">Rozmówca</h2>
-                <p className="text-sm">Online</p>
-              </div>
+            <button onClick={() => router.push("/messages")} className="mr-4">
+              ←
+            </button>
+            <div>
+              <h2 className="font-semibold">Czat: {conversationId}</h2>
+              {/* Możesz dodać tutaj nazwę oferty lub rozmówcy */}
             </div>
           </header>
 
@@ -111,19 +90,19 @@ export default function ChatPage() {
           <main className="flex-1 p-4 overflow-y-auto">
             {chat.length === 0 ? (
               <div className="text-center text-gray-500 py-10">
-                Nie masz jeszcze żadnych wiadomości.
+                Nie ma jeszcze wiadomości.
               </div>
             ) : (
               chat.map((msg, index) => (
                 <div
                   key={index}
                   className={`mb-4 flex ${
-                    msg.sender === session?.user.id ? "justify-end" : "justify-start"
+                    msg.senderId === session.user.id ? "justify-end" : "justify-start"
                   }`}
                 >
                   <div
                     className={`rounded-lg p-3 max-w-xs break-words ${
-                      msg.sender === session?.user.id
+                      msg.senderId === session.user.id
                         ? "bg-blue-600 text-white"
                         : "bg-white text-gray-800 shadow"
                     }`}
