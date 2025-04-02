@@ -3,8 +3,8 @@
 import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import SidebarLayout from "../components/SidebarLayout";
-import TopNavbar from "../components/TopNavbar";
+import SidebarLayout from "../../components/SidebarLayout";
+import TopNavbar from "../../components/TopNavbar";
 import { FaHeart } from "react-icons/fa";
 
 export default function FavoritesPage() {

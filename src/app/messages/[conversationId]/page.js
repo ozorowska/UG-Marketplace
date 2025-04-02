@@ -4,8 +4,8 @@ import React, { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Pusher from "pusher-js";
 import { useSession } from "next-auth/react";
-import TopNavbar from "../../components/TopNavbar";
-import SidebarLayout from "../../components/SidebarLayout";
+import TopNavbar from "../../../components/TopNavbar";
+import SidebarLayout from "../../../components/SidebarLayout";
 
 export default function ChatPage() {
   const { conversationId } = useParams(); // id konwersacji

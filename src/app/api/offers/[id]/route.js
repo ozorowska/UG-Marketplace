@@ -11,7 +11,7 @@ export async function GET(request, { params }) {
     const { id } = params;
     const offer = await prisma.offer.findUnique({
       where: { id },
-      include: { user: true, tags: true }, // dołączamy dodatkowe informacje, jeśli są potrzebne
+      include: { user: true, tags: true },
     });
 
     if (!offer) {
@@ -25,7 +25,6 @@ export async function GET(request, { params }) {
   }
 }
 
-
 export async function PUT(request, context) {
   try {
     const { params } = context;
@@ -36,18 +35,27 @@ export async function PUT(request, context) {
     const id = String(params.id);
     const formData = await request.formData();
 
+    // Pobieramy dane z formData
     const title = formData.get("title") || null;
     const description = formData.get("description") || null;
     const price = formData.get("price") ? parseFloat(formData.get("price")) : null;
     const major = formData.get("major") || null;
+    const department = formData.get("department") || null;  // może być puste
+    const category = formData.get("category") || null;      // np. "KSIAZKI", "NOTATKI", "INNE"
     const image = formData.get("image") || null;
-    const tags = formData.get("tags")?.split(",").map((tag) => tag.trim()) || [];
+
+    const tagsFromForm = formData.get("tags")?.split(",").map((tag) => tag.trim()) || [];
     let imageUrl = formData.get("imageUrl") || null;
 
-    console.log("📌 Przychodzące dane:", { title, description, price, major, image, imageUrl, tags });
+    console.log("📌 Przychodzące dane:", {
+      title, description, price, major, department, category, image, imageUrl, tagsFromForm
+    });
 
-    if (!title || !description || isNaN(price) || !major) {
-      return NextResponse.json({ error: "Wszystkie pola są wymagane" }, { status: 400 });
+    // Zmieniamy walidację tak, by nie wymagała zawsze department
+    if (!title || !description || isNaN(price) || !major || !category) {
+      return NextResponse.json({
+        error: "Wszystkie pola (title, description, price, major, category) są wymagane"
+      }, { status: 400 });
     }
 
     const existingOffer = await prisma.offer.findUnique({
@@ -61,19 +69,21 @@ export async function PUT(request, context) {
 
     // Obsługa nowego zdjęcia
     if (image && image instanceof File) {
+      await fs.mkdir(uploadDir, { recursive: true });
       const fileName = `${Date.now()}-${image.name}`;
       const filePath = path.join(uploadDir, fileName);
       const buffer = Buffer.from(await image.arrayBuffer());
       await fs.writeFile(filePath, buffer);
       imageUrl = `/uploads/${fileName}`;
     } else {
+      // Jeśli nie wysyłano nowego zdjęcia, zachowaj poprzednie
       imageUrl = existingOffer.imageUrl;
     }
 
     // Obsługa tagów – aktualizacja tagów w bazie
     const currentTags = existingOffer.tags.map((tag) => tag.name);
-    const tagsToAdd = tags.filter((tag) => !currentTags.includes(tag));
-    const tagsToRemove = currentTags.filter((tag) => !tags.includes(tag));
+    const tagsToAdd = tagsFromForm.filter((tag) => !currentTags.includes(tag));
+    const tagsToRemove = currentTags.filter((tag) => !tagsFromForm.includes(tag));
 
     console.log("➕ Dodajemy tagi:", tagsToAdd);
     console.log("➖ Usuwamy tagi:", tagsToRemove);
@@ -107,6 +117,8 @@ export async function PUT(request, context) {
         description: description ?? existingOffer.description,
         price: price ?? existingOffer.price,
         major: major ?? existingOffer.major,
+        department: department ?? existingOffer.department,
+        category: category ?? existingOffer.category,
         imageUrl: imageUrl,
         tags: {
           connect: newTags.map((tag) => ({ id: tag.id })),

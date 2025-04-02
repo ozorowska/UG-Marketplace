@@ -1,0 +1,350 @@
+[
+    {
+        "wydzial": "Wydział Biologii",
+        "kierunek": "Biologia"
+    },
+    {
+        "wydzial": "Wydział Biologii",
+        "kierunek": "Biologia medyczna"
+    },
+    {
+        "wydzial": "Wydział Biologii",
+        "kierunek": "Genetyka i biologia eksperymentalna"
+    },
+    {
+        "wydzial": "Wydział Biologii",
+        "kierunek": "Ochrona zasobów przyrodniczych"
+    },
+    {
+        "wydzial": "Wydział Chemii",
+        "kierunek": "Biznes chemiczny"
+    },
+    {
+        "wydzial": "Wydział Chemii",
+        "kierunek": "Chemia"
+    },
+    {
+        "wydzial": "Wydział Chemii",
+        "kierunek": "Ochrona środowiska"
+    },
+    {
+        "wydzial": "Wydział Ekonomiczny",
+        "kierunek": "Biznes i Technologia Ekologiczna"
+    },
+    {
+        "wydzial": "Wydział Ekonomiczny",
+        "kierunek": "Ekonomia"
+    },
+    {
+        "wydzial": "Wydział Ekonomiczny",
+        "kierunek": "Intercultural and Business Relations in Europe"
+    },
+    {
+        "wydzial": "Wydział Ekonomiczny",
+        "kierunek": "Międzynarodowe stosunki gospodarcze"
+    },
+    {
+        "wydzial": "Wydział Ekonomiczny",
+        "kierunek": "Telemedycyna i projekty w ochronie zdrowia"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Amerykanistyka"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Cultural Communication"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Etnofilologia kaszubska"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Filologia angielska"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Filologia germańska"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Filologia klasyczna"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Filologia polska"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Filologia romańska i iberystyka"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Filologia rosyjska"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Kulturoznawstwo"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Lingwistyka stosowana"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Logopedia"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Produkcja form audiowizualnych"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Rosjoznawstwo"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Sinologia"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Skandynawistyka"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Slawistyka"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Studia bałkańskie"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Studia wschodnie"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Studium Humanitatis - Tradycje Cywilizacji Europejskiej"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Teatrologia"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Wiedza o filmie i kulturze audiowizualnej"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Wiedza o teatrze"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Zarządzanie i komunikacja w sztukach scenicznych"
+    },
+    {
+        "wydzial": "Wydział Filologiczny",
+        "kierunek": "Zarządzanie instytucjami artystycznymi"
+    },
+    {
+        "wydzial": "Wydział Historyczny",
+        "kierunek": "Archeologia"
+    },
+    {
+        "wydzial": "Wydział Historyczny",
+        "kierunek": "Etnologia"
+    },
+    {
+        "wydzial": "Wydział Historyczny",
+        "kierunek": "Historia"
+    },
+    {
+        "wydzial": "Wydział Historyczny",
+        "kierunek": "Historia sztuki"
+    },
+    {
+        "wydzial": "Wydział Historyczny",
+        "kierunek": "Krajoznawstwo i turystyka historyczna"
+    },
+    {
+        "wydzial": "Wydział Historyczny",
+        "kierunek": "Niemcoznawstwo"
+    },
+    {
+        "wydzial": "Wydział Historyczny",
+        "kierunek": "Religioznawstwo"
+    },
+    {
+        "wydzial": "Wydział Matematyki, Fizyki i Informatyki",
+        "kierunek": "Bezpieczeństwo jądrowe i ochrona radiologiczna"
+    },
+    {
+        "wydzial": "Wydział Matematyki, Fizyki i Informatyki",
+        "kierunek": "Bioinformatyka"
+    },
+    {
+        "wydzial": "Wydział Matematyki, Fizyki i Informatyki",
+        "kierunek": "Fizyka"
+    },
+    {
+        "wydzial": "Wydział Matematyki, Fizyki i Informatyki",
+        "kierunek": "Fizyka medyczna"
+    },
+    {
+        "wydzial": "Wydział Matematyki, Fizyki i Informatyki",
+        "kierunek": "Informatyka"
+    },
+    {
+        "wydzial": "Wydział Matematyki, Fizyki i Informatyki",
+        "kierunek": "Informatyka o profilu praktycznym"
+    },
+    {
+        "wydzial": "Wydział Matematyki, Fizyki i Informatyki",
+        "kierunek": "Matematyka"
+    },
+    {
+        "wydzial": "Wydział Matematyki, Fizyki i Informatyki",
+        "kierunek": "Modelowanie matematyczne i analiza danych"
+    },
+    {
+        "wydzial": "Wydział Nauk Społecznych",
+        "kierunek": "Bezpieczeństwo narodowe"
+    },
+    {
+        "wydzial": "Wydział Nauk Społecznych",
+        "kierunek": "Dyplomacja"
+    },
+    {
+        "wydzial": "Wydział Nauk Społecznych",
+        "kierunek": "Dziennikarstwo i komunikacja społeczna"
+    },
+    {
+        "wydzial": "Wydział Nauk Społecznych",
+        "kierunek": "Filozofia"
+    },
+    {
+        "wydzial": "Wydział Nauk Społecznych",
+        "kierunek": "Pedagogika"
+    },
+    {
+        "wydzial": "Wydział Nauk Społecznych",
+        "kierunek": "Pedagogika przedszkolna i wczesnoszkolna"
+    },
+    {
+        "wydzial": "Wydział Nauk Społecznych",
+        "kierunek": "Pedagogika specjalna"
+    },
+    {
+        "wydzial": "Wydział Nauk Społecznych",
+        "kierunek": "Pedagogika specjalna"
+    },
+    {
+        "wydzial": "Wydział Nauk Społecznych",
+        "kierunek": "Pedagogika wczesnej edukacji"
+    },
+    {
+        "wydzial": "Wydział Nauk Społecznych",
+        "kierunek": "Politologia"
+    },
+    {
+        "wydzial": "Wydział Nauk Społecznych",
+        "kierunek": "Praca socjalna"
+    },
+    {
+        "wydzial": "Wydział Nauk Społecznych",
+        "kierunek": "Psychologia"
+    },
+    {
+        "wydzial": "Wydział Nauk Społecznych",
+        "kierunek": "Socjologia"
+    },
+    {
+        "wydzial": "Wydział Oceanografii i Geografii",
+        "kierunek": "Akwakultura - Biznes i technologia"
+    },
+    {
+        "wydzial": "Wydział Oceanografii i Geografii",
+        "kierunek": "Geografia"
+    },
+    {
+        "wydzial": "Wydział Oceanografii i Geografii",
+        "kierunek": "Geografia fizyczna z geoinformacją"
+    },
+    {
+        "wydzial": "Wydział Oceanografii i Geografii",
+        "kierunek": "Geografia społeczno-ekonomiczna z elementami GIS"
+    },
+    {
+        "wydzial": "Wydział Oceanografii i Geografii",
+        "kierunek": "Geologia"
+    },
+    {
+        "wydzial": "Wydział Oceanografii i Geografii",
+        "kierunek": "Gospodarka przestrzenna"
+    },
+    {
+        "wydzial": "Wydział Oceanografii i Geografii",
+        "kierunek": "Gospodarka wodna i ochrona zasobów wód"
+    },
+    {
+        "wydzial": "Wydział Oceanografii i Geografii",
+        "kierunek": "Hydrografia morska"
+    },
+    {
+        "wydzial": "Wydział Oceanografii i Geografii",
+        "kierunek": "Oceanografia"
+    },
+    {
+        "wydzial": "Wydział Prawa i Administracji",
+        "kierunek": "Administracja"
+    },
+    {
+        "wydzial": "Wydział Prawa i Administracji",
+        "kierunek": "Criminology and criminal justice"
+    },
+    {
+        "wydzial": "Wydział Prawa i Administracji",
+        "kierunek": "European and International Business Law"
+    },
+    {
+        "wydzial": "Wydział Prawa i Administracji",
+        "kierunek": "European Business Administration"
+    },
+    {
+        "wydzial": "Wydział Prawa i Administracji",
+        "kierunek": "Kryminologia"
+    },
+    {
+        "wydzial": "Wydział Prawa i Administracji",
+        "kierunek": "Podatki i doradztwo podatkowe"
+    },
+    {
+        "wydzial": "Wydział Prawa i Administracji",
+        "kierunek": "Prawo"
+    },
+    {
+        "wydzial": "Wydział Prawa i Administracji",
+        "kierunek": "Prawo w administracji i gospodarce"
+    },
+    {
+        "wydzial": "Wydział Zarządzania",
+        "kierunek": "Finanse i rachunkowość"
+    },
+    {
+        "wydzial": "Wydział Zarządzania",
+        "kierunek": "Informatyka i ekonometria"
+    },
+    {
+        "wydzial": "Wydział Zarządzania",
+        "kierunek": "Ubezpieczenia - studia interdyscyplinarne"
+    },
+    {
+        "wydzial": "Wydział Zarządzania",
+        "kierunek": "Zarządzanie"
+    },
+    {
+        "wydzial": "Wydział Zarządzania",
+        "kierunek": "Zarządzanie instytucjami służby zdrowia"
+    }
+]

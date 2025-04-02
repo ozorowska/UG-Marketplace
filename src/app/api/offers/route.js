@@ -35,6 +35,9 @@ export async function POST(request) {
     const major = formData.get("major");
     const userId = formData.get("userId");
     const image = formData.get("image");
+    const department = formData.get("department"); // nowy klucz w formData
+    const category = formData.get("category"); // np. "KSIAZKI"
+
 
     if (!title || !description || isNaN(price) || !tags || !major || !userId) {
       return NextResponse.json(
@@ -79,6 +82,8 @@ export async function POST(request) {
         description,
         price,
         major,
+        department,
+        category,
         imageUrl,
         user: { connect: { id: userId } },
         tags: { connect: tagRecords.map((tag) => ({ id: tag.id })) },

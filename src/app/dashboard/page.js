@@ -3,14 +3,14 @@
 import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import SidebarLayout from "../components/SidebarLayout";
-import TopNavbar from "../components/TopNavbar";
-import FloatingButton from "../components/FloatingButton";
+import SidebarLayout from "../../components/SidebarLayout";
+import TopNavbar from "../../components/TopNavbar";
+import FloatingButton from "../../components/FloatingButton";
 import { FaHeart } from "react-icons/fa";
 
 // Komponenty modalowe
-import NewOfferModal from "./NewOfferModal";
-import OfferDetailModal from "./OfferDetailModal";
+import NewOfferModal from "../../components/NewOfferModal";
+import OfferDetailModal from "../../components/OfferDetailModal";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();

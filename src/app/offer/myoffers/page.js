@@ -3,8 +3,8 @@
 import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import SidebarLayout from "../../components/SidebarLayout";
-import TopNavbar from "../../components/TopNavbar";
+import SidebarLayout from "../../../components/SidebarLayout";
+import TopNavbar from "../../../components/TopNavbar";
 
 // Załóżmy, że umieściłaś EditOfferModal w tym samym folderze co page.js
 // lub w folderze components – dostosuj ścieżkę w zależności od miejsca:

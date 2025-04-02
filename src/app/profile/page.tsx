@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import SidebarLayout from "../components/SidebarLayout";
-import TopNavbar from "../components/TopNavbar";
+import SidebarLayout from "../../components/SidebarLayout";
+import TopNavbar from "../../components/TopNavbar";
 
 export default function FavoritesPage() {
   return (

@@ -29,23 +29,25 @@ model User {
 }
 
 model Offer {
-  id          String   @id @default(uuid())
+  id          String      @id @default(uuid())
   imageUrl    String?
   title       String
   description String
   price       Float
-  major       String
-  createdAt   DateTime @default(now())
+  major       String      // Tu przechowujemy wybrany KIERUNEK
+  department  String      // Nowe pole: WYDZIAŁ
+  category    Category?   // Nowe pole: KATEGORIA
+  createdAt   DateTime    @default(now())
 
   // Relacja – autor oferty
-  user        User     @relation(fields: [userId], references: [id])
+  user        User        @relation(fields: [userId], references: [id])
   userId      String
 
   // Tagi
-  tags        Tag[]    @relation("OfferTags")
+  tags        Tag[]       @relation("OfferTags")
 
   // Ulubione oferty
-  favoritedBy User[]   @relation("UserFavorites")
+  favoritedBy User[]      @relation("UserFavorites")
 
   // Rozmowy dotyczące oferty
   conversations Conversation[]
