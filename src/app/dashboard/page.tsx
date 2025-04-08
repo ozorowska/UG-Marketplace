@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 // Komponenty
 import SidebarLayout from "../../components/SidebarLayout";
@@ -34,6 +34,8 @@ interface Offer {
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const query = searchParams.get("q") || "";
 
   const [offers, setOffers] = useState<Offer[]>([]);
   const [filteredOffers, setFilteredOffers] = useState<Offer[]>([]);
@@ -50,20 +52,26 @@ export default function DashboardPage() {
     if (!session) router.push("/login");
   }, [session, status, router]);
 
-  useEffect(() => {
-    async function fetchOffers() {
-      try {
-        const res = await fetch("/api/offers");
-        if (!res.ok) throw new Error("Failed to fetch offers");
-        const data = await res.json();
-        setOffers(data);
-        setFilteredOffers(data);
-      } catch (error) {
-        console.error("Error fetching offers:", error);
-      }
+  // === Minimalna zmiana: wydzielenie funkcji refreshOffers
+  const refreshOffers = async () => {
+    try {
+      const endpoint =
+        query.trim() !== ""
+          ? `/api/search?q=${encodeURIComponent(query)}`
+          : "/api/offers";
+      const res = await fetch(endpoint);
+      if (!res.ok) throw new Error("Failed to fetch offers");
+      const data = await res.json();
+      setOffers(data);
+      setFilteredOffers(data);
+    } catch (error) {
+      console.error("Error fetching offers:", error);
     }
-    fetchOffers();
-  }, []);
+  };
+
+  useEffect(() => {
+    refreshOffers();
+  }, [query]);
 
   useEffect(() => {
     async function fetchFavorites() {
@@ -80,7 +88,7 @@ export default function DashboardPage() {
     if (session) fetchFavorites();
   }, [session]);
 
-  const uniqueMajors = Array.from(new Set(offers.map(offer => offer.major))).filter(Boolean);
+  const uniqueMajors = Array.from(new Set(offers.map((offer) => offer.major))).filter(Boolean);
 
   useEffect(() => {
     let sorted = [...offers];
@@ -96,10 +104,10 @@ export default function DashboardPage() {
         break;
     }
     if (activeCategory) {
-      sorted = sorted.filter(offer => offer.category === activeCategory);
+      sorted = sorted.filter((offer) => offer.category === activeCategory);
     }
     if (activeMajor) {
-      sorted = sorted.filter(offer => offer.major === activeMajor);
+      sorted = sorted.filter((offer) => offer.major === activeMajor);
     }
     setFilteredOffers(sorted);
   }, [offers, sortOption, activeCategory, activeMajor]);
@@ -114,8 +122,8 @@ export default function DashboardPage() {
         body: JSON.stringify({ offerId }),
       });
       if (!res.ok) throw new Error(`Failed to ${isFavorite ? "remove" : "add"} favorite`);
-      setFavoriteOffers(prev =>
-        isFavorite ? prev.filter(id => id !== offerId) : [...prev, offerId]
+      setFavoriteOffers((prev) =>
+        isFavorite ? prev.filter((id) => id !== offerId) : [...prev, offerId]
       );
     } catch (err) {
       console.error("Error toggling favorite:", err);
@@ -130,7 +138,7 @@ export default function DashboardPage() {
   ];
 
   const getCategoryIcon = (category: string) => {
-    const found = categories.find(c => c.value === category);
+    const found = categories.find((c) => c.value === category);
     return found ? found.icon : <IoOptions className="mr-2" />;
   };
 
@@ -141,7 +149,21 @@ export default function DashboardPage() {
       <TopNavbar />
       <SidebarLayout>
         <div className="mb-6 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Oferty studenckie</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-gray-900">
+              {query.trim() ? `Wyniki wyszukiwania: "${query}"` : "Oferty studenckie"}
+            </h1>
+            {/* Dodany krzyżyk do zamykania wyszukiwania */}
+            {query.trim() && (
+              <button
+                onClick={() => router.push("/dashboard")}
+                className="text-gray-500 hover:text-gray-700"
+                title="Zamknij wyszukiwanie"
+              >
+                <IoClose size={20} />
+              </button>
+            )}
+          </div>
           <button 
             onClick={() => setShowFilters(!showFilters)}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-xs hover:bg-gray-50"
@@ -159,7 +181,9 @@ export default function DashboardPage() {
                   {categories.map((category) => (
                     <button
                       key={category.value}
-                      onClick={() => setActiveCategory(activeCategory === category.value ? null : category.value)}
+                      onClick={() =>
+                        setActiveCategory(activeCategory === category.value ? null : category.value)
+                      }
                       className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm transition-colors ${
                         activeCategory === category.value
                           ? "bg-blue-600 text-white"
@@ -228,7 +252,7 @@ export default function DashboardPage() {
             {activeCategory && (
               <div className="flex items-center bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full text-sm">
                 {getCategoryIcon(activeCategory)}
-                {categories.find(c => c.value === activeCategory)?.label}
+                {categories.find((c) => c.value === activeCategory)?.label}
                 <button 
                   onClick={() => setActiveCategory(null)}
                   className="ml-2 text-blue-500 hover:text-blue-700"
@@ -255,7 +279,7 @@ export default function DashboardPage() {
             {filteredOffers.map((offer) => {
               const isFavorite = favoriteOffers.includes(offer.id);
               const isFree = offer.price === 0;
-              const categoryData = categories.find(c => c.value === offer.category);
+              const categoryData = categories.find((c) => c.value === offer.category);
               return (
                 <div
                   key={offer.id}
@@ -364,7 +388,7 @@ export default function DashboardPage() {
       </SidebarLayout>
       <FloatingButton onClick={() => setShowNewOfferModal(true)} />
       {showNewOfferModal && (
-        <NewOfferModal onClose={() => setShowNewOfferModal(false)} />
+        <NewOfferModal onClose={() => setShowNewOfferModal(false)} onOfferAdded={refreshOffers} />
       )}
       {selectedOfferId && (
         <OfferDetailModal

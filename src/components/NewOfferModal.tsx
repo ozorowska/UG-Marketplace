@@ -16,9 +16,10 @@ import majorsData from "../../ug_majors.json";
 
 interface NewOfferMultiStepModalProps {
   onClose: () => void;
+  onOfferAdded: () => Promise<void>; // Dodana właściwość onOfferAdded
 }
 
-export default function NewOfferMultiStepModal({ onClose }: NewOfferMultiStepModalProps) {
+export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOfferMultiStepModalProps) {
   const { data: session } = useSession();
   const [step, setStep] = useState(1);
   const [category, setCategory] = useState("INNE");
@@ -87,7 +88,7 @@ export default function NewOfferMultiStepModal({ onClose }: NewOfferMultiStepMod
     }
 
     try {
-      // 1) Skladamy obiekt z danymi do zapisania w `description`
+      // 1) Składamy obiekt z danymi do zapisania w `description`
       const extraData: Record<string, any> = {
         baseDescription: description, // główny opis
         location,                     // miejsce odbioru/odbywania
@@ -138,6 +139,10 @@ export default function NewOfferMultiStepModal({ onClose }: NewOfferMultiStepMod
       }
 
       alert("Oferta dodana!");
+
+      // Wywołujemy callback onOfferAdded aby odświeżyć listę ofert
+      await onOfferAdded();
+
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Wystąpił nieznany błąd");

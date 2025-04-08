@@ -12,7 +12,17 @@ interface TopNavbarProps {
 export default function TopNavbar({ onHamburgerClick }: TopNavbarProps) {
   const router = useRouter();
   const [searchExpanded, setSearchExpanded] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(""); // stan dla zapytania
   const [showNewOfferModal, setShowNewOfferModal] = useState(false);
+
+  // Funkcja obsługująca wyszukiwanie – przekierowuje do dashboardu z parametrem q
+  // Funkcja obsługująca wyszukiwanie – przekierowuje do dashboardu z parametrem q
+const handleSearch = () => {
+  if (searchQuery.trim()) {
+    router.push(`/dashboard?q=${encodeURIComponent(searchQuery)}`);
+  }
+};
+
 
   return (
     <>
@@ -49,9 +59,16 @@ export default function TopNavbar({ onHamburgerClick }: TopNavbarProps) {
               <div className="flex items-center bg-white rounded-full border border-gray-300 px-2">
                 <input
                   type="text"
-                  placeholder="Szukaj..."
+                  placeholder="Czego szukasz?"
                   className="py-1 px-2 focus:outline-none text-sm w-32"
                   autoFocus
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSearch();
+                    }
+                  }}
                 />
                 <button
                   onClick={() => setSearchExpanded(false)}
@@ -82,6 +99,13 @@ export default function TopNavbar({ onHamburgerClick }: TopNavbarProps) {
               type="text"
               placeholder="Czego szukasz?"
               className="w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#002d73] border-gray-300"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleSearch();
+                }
+              }}
             />
           </div>
 
@@ -97,7 +121,9 @@ export default function TopNavbar({ onHamburgerClick }: TopNavbarProps) {
       </header>
 
       {showNewOfferModal && (
-        <NewOfferModal onClose={() => setShowNewOfferModal(false)} />
+        <NewOfferModal onClose={() => setShowNewOfferModal(false)} onOfferAdded={function (): Promise<void> {
+          throw new Error("Function not implemented.");
+        } } />
       )}
     </>
   );
