@@ -28,7 +28,8 @@ interface Offer {
   createdAt: string;
   department: string;
   major: string;
-  location: string;
+  description: string;
+  parsedLocation?: string;
 }
 
 export default function DashboardPage() {
@@ -52,7 +53,6 @@ export default function DashboardPage() {
     if (!session) router.push("/login");
   }, [session, status, router]);
 
-  // === Minimalna zmiana: wydzielenie funkcji refreshOffers
   const refreshOffers = async () => {
     try {
       const endpoint =
@@ -62,8 +62,24 @@ export default function DashboardPage() {
       const res = await fetch(endpoint);
       if (!res.ok) throw new Error("Failed to fetch offers");
       const data = await res.json();
-      setOffers(data);
-      setFilteredOffers(data);
+      
+      const offersWithLocation = data.map((offer: any) => {
+        try {
+          const parsedDesc = JSON.parse(offer.description);
+          return {
+            ...offer,
+            parsedLocation: parsedDesc.location || offer.location || "Dogadamy się"
+          };
+        } catch {
+          return {
+            ...offer,
+            parsedLocation: offer.location || "Dogadamy się"
+          };
+        }
+      });
+
+      setOffers(offersWithLocation);
+      setFilteredOffers(offersWithLocation);
     } catch (error) {
       console.error("Error fetching offers:", error);
     }
@@ -153,7 +169,6 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-bold text-gray-900">
               {query.trim() ? `Wyniki wyszukiwania: "${query}"` : "Oferty studenckie"}
             </h1>
-            {/* Dodany krzyżyk do zamykania wyszukiwania */}
             {query.trim() && (
               <button
                 onClick={() => router.push("/dashboard")}
@@ -334,7 +349,7 @@ export default function DashboardPage() {
                     </h3>
                     <div className="flex items-center text-sm text-gray-600 mb-3">
                       <FaMapMarkerAlt className="mr-1.5 text-gray-400" size={12} />
-                      <span>{offer.location || "Dogadamy się"}</span>
+                      <span>{offer.parsedLocation}</span>
                     </div>
                     {offer.tags.length > 0 && (
                       <div className="mt-auto pt-2 flex flex-wrap gap-1.5">
