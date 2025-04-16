@@ -12,6 +12,8 @@ model User {
   email          String         @unique
   name           String?
   hashedPassword String
+  major          String?        // Nowe pole: kierunek studiów
+  image          String?        // Nowe pole: ścieżka do zdjęcia profilowego
   createdAt      DateTime       @default(now())
 
   // Oferty utworzone przez użytkownika
@@ -40,7 +42,7 @@ model Offer {
   createdAt   DateTime    @default(now())
 
   // Relacja – autor oferty
-  user        User        @relation(fields: [userId], references: [id])
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
 
   // Tagi
@@ -77,8 +79,8 @@ model Conversation {
 
   // Relacje
   offer     Offer     @relation(fields: [offerId], references: [id], onDelete: Cascade)
-  buyer     User      @relation("BuyerConversations", fields: [buyerId], references: [id])
-  seller    User      @relation("SellerConversations", fields: [sellerId], references: [id])
+  buyer     User      @relation("BuyerConversations", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller    User      @relation("SellerConversations", fields: [sellerId], references: [id], onDelete: Cascade)
   messages  Message[]
 }
 
@@ -88,9 +90,10 @@ model Message {
   senderId       String
   createdAt      DateTime      @default(now())
   conversationId String
+  read           Boolean       @default(false)  
 
   // Relacja – nadawca wiadomości
-  sender         User          @relation(fields: [senderId], references: [id])
+  sender         User          @relation(fields: [senderId], references: [id], onDelete: Cascade)
   // Relacja – do której rozmowy należy wiadomość
   conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 }

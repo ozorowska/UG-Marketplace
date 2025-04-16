@@ -40,7 +40,13 @@ const handler = NextAuth({
         }
 
         // Zwrócenie użytkownika (bez hasła)
-        return { id: user.id, email: user.email, name: user.name }
+        return { 
+          id: user.id, 
+          email: user.email, 
+          name: user.name,
+          major: user.major,
+          image: user.image
+        }
       },
     }),
   ],
@@ -57,6 +63,8 @@ const handler = NextAuth({
         token.id = user.id
         token.email = user.email
         token.name = user.name
+        token.major = user.major
+        token.image = user.image
       }
 
       if (!token.id && token.sub) {
@@ -72,6 +80,8 @@ const handler = NextAuth({
           id: token.id, 
           email: token.email,
           name: token.name,
+          major: token.major,
+          image: token.image
         }
       }
       console.log("Session Callback:", session)

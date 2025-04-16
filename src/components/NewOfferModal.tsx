@@ -12,11 +12,11 @@ import {
   FaImage,
 } from "react-icons/fa";
 import { GrNotes, GrMoney } from "react-icons/gr";
-import majorsData from "../../ug_majors.json";
+import majorsData from "../../public/ug_majors.json";
 
 interface NewOfferMultiStepModalProps {
   onClose: () => void;
-  onOfferAdded: () => Promise<void>; // Dodana właściwość onOfferAdded
+  onOfferAdded: () => Promise<void>;
 }
 
 export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOfferMultiStepModalProps) {
@@ -42,6 +42,8 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
   // Pola "korepetycje"
   const [subject, setSubject] = useState("");
   const [availability, setAvailability] = useState("");
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [timeOfDay, setTimeOfDay] = useState("");
 
   // Krok 3
   const [price, setPrice] = useState("");
@@ -56,6 +58,32 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
   const filteredMajors = majorsData
     .filter((item) => item.wydzial === department)
     .map((item) => item.kierunek);
+
+  // Generujemy lata do wyboru (ostatnie 30 lat)
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 30 }, (_, i) => (currentYear - i).toString());
+
+  // Dni tygodnia do wyboru
+  const daysOfWeek = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"];
+  const timesOfDay = ["Rano", "Popołudnie", "Wieczór", "Elastycznie"];
+
+  // Aktualizacja dostępności z wybranych dni i pór dnia
+  const updateAvailability = () => {
+    const days = selectedDays.length > 0 ? selectedDays.join(", ") : "";
+    const time = timeOfDay ? timeOfDay : "";
+    setAvailability(days && time ? `${days} - ${time}` : days || time);
+  };
+
+  // Obsługa wyboru dni tygodnia
+  const handleDayToggle = (day: string) => {
+    setSelectedDays((prev) => {
+      const newDays = prev.includes(day)
+        ? prev.filter((d) => d !== day)
+        : [...prev, day];
+      
+      return newDays;
+    });
+  };
 
   // Dodawanie/Usuwanie tagów
   const handleAddTag = () => {
@@ -74,6 +102,11 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
     const value = Math.max(0, parseFloat(e.target.value) || 0);
     setPrice(value.toString());
   };
+
+  // Efekt dla aktualizacji availibility po zmianie dni lub pory dnia
+  React.useEffect(() => {
+    updateAvailability();
+  }, [selectedDays, timeOfDay]);
 
   // Wysyłanie danych
   const handleSubmit = async (e: React.FormEvent) => {
@@ -273,6 +306,12 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
                   className="w-full p-2 border rounded"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
+                  placeholder={
+                    category === "KSIAZKI" ? "Np. Matematyka dla studentów" : 
+                    category === "NOTATKI" ? "Np. Notatki z Podstaw Ekonomii" :
+                    category === "KOREPETYCJE" ? "Np. Korepetycje z Analizy Matematycznej" :
+                    "Np. Kalkulator naukowy"
+                  }
                   required
                 />
               </div>
@@ -290,6 +329,7 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
                         className="w-full p-2 border rounded"
                         value={author}
                         onChange={(e) => setAuthor(e.target.value)}
+                        placeholder="Np. Jan Kowalski"
                         required
                       />
                     </div>
@@ -302,6 +342,7 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
                         className="w-full p-2 border rounded"
                         value={publisher}
                         onChange={(e) => setPublisher(e.target.value)}
+                        placeholder="Np. PWN"
                         required
                       />
                     </div>
@@ -311,26 +352,37 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
                       <label className="block mb-1 font-medium">
                         Rok wydania <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="text"
+                      <select
                         className="w-full p-2 border rounded"
                         value={year}
                         onChange={(e) => setYear(e.target.value)}
                         required
-                      />
+                      >
+                        <option value="">Wybierz rok</option>
+                        {years.map((y) => (
+                          <option key={y} value={y}>
+                            {y}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="block mb-1 font-medium">
                         Stan <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="text"
+                      <select
                         className="w-full p-2 border rounded"
                         value={condition}
                         onChange={(e) => setCondition(e.target.value)}
-                        placeholder="np. Nowa"
                         required
-                      />
+                      >
+                        <option value="">Wybierz stan</option>
+                        <option value="Nowa">Nowa</option>
+                        <option value="Jak nowa">Jak nowa</option>
+                        <option value="Bardzo dobry">Bardzo dobry</option>
+                        <option value="Dobry">Dobry</option>
+                        <option value="Widoczne ślady użytkowania">Widoczne ślady użytkowania</option>
+                      </select>
                     </div>
                   </div>
                 </>
@@ -348,6 +400,7 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
                       className="w-full p-2 border rounded"
                       value={teacher}
                       onChange={(e) => setTeacher(e.target.value)}
+                      placeholder="Np. dr hab. Anna Nowak"
                       required
                     />
                   </div>
@@ -390,6 +443,7 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
                       className="w-full p-2 border rounded"
                       value={subject}
                       onChange={(e) => setSubject(e.target.value)}
+                      placeholder="Np. Matematyka, Fizyka, Programowanie"
                       required
                     />
                   </div>
@@ -397,13 +451,43 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
                     <label className="block mb-1 font-medium">
                       Dostępność czasowa <span className="text-red-500">*</span>
                     </label>
+                    <div className="mb-2">
+                      <p className="text-sm text-gray-500 mb-1">Dni tygodnia:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {daysOfWeek.map((day) => (
+                          <button
+                            key={day}
+                            type="button"
+                            className={`px-2 py-1 text-xs rounded-full ${
+                              selectedDays.includes(day)
+                                ? "bg-blue-500 text-white"
+                                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                            }`}
+                            onClick={() => handleDayToggle(day)}
+                          >
+                            {day.substring(0, 3)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Pora dnia:</p>
+                      <select
+                        className="w-full p-2 border rounded"
+                        value={timeOfDay}
+                        onChange={(e) => setTimeOfDay(e.target.value)}
+                        required
+                      >
+                        <option value="">Wybierz porę dnia</option>
+                        {timesOfDay.map((time) => (
+                          <option key={time} value={time}>{time}</option>
+                        ))}
+                      </select>
+                    </div>
                     <input
-                      type="text"
-                      className="w-full p-2 border rounded"
+                      type="hidden"
                       value={availability}
-                      onChange={(e) => setAvailability(e.target.value)}
-                      placeholder="np. Pn-Pt 16:00-20:00"
-                      required
+                      name="availability"
                     />
                   </div>
                 </>
@@ -419,6 +503,12 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
                   rows={3}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  placeholder={
+                    category === "KSIAZKI" ? "Opisz szczegóły książki, dodatkowe informacje..." : 
+                    category === "NOTATKI" ? "Opisz zawartość notatek, z jakiego semestru pochodzą..." :
+                    category === "KOREPETYCJE" ? "Napisz coś o sobie, swoim doświadczeniu w nauczaniu..." :
+                    "Podaj szczegóły oferty..."
+                  }
                   required
                 />
               </div>
@@ -451,7 +541,7 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
               <div>
                 {/* Cena */}
                 <label className="block mb-1 font-medium">
-                  Cena (PLN) <span className="text-red-500">*</span>
+                  Cena (PLN){category === "KOREPETYCJE" ? " /h" : ""} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
@@ -461,10 +551,11 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
                   min="0"
                   step="0.01"
                   required
+                  placeholder={category === "KOREPETYCJE" ? "Np. 50" : "Np. 30"}
                 />
                 {price === "0" && (
                   <p className="text-sm text-gray-500 mt-1">
-                    Oferta będzie widoczna jako „za darmo”
+                    Oferta będzie widoczna jako „za darmo"
                   </p>
                 )}
               </div>
@@ -517,10 +608,15 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
                   <input
                     type="text"
                     className="flex-1 p-2 border rounded-l"
-                    placeholder="Dodaj tag..."
+                    placeholder="Dodaj tag... np. semestr1, analiza, studia"
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddTag();
+                      }
+                    }}
                   />
                   <button
                     type="button"
