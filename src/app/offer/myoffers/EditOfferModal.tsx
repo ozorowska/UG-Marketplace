@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import majorsData from "../../../../ug_majors.json"; // <-- import pliku JSON z kierunkami
+import majorsData from "../../../../public/ug_majors.json"; // <-- import pliku JSON z kierunkami
 
 // Przykładowy typ oferty, by mieć lepsze podpowiedzi
 type Tag = { id: string; name: string };

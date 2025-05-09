@@ -31,8 +31,8 @@ export default function HomePage() {
           bg-opacity-20
           backdrop-blur-md
           p-8
-          rounded
-          shadow
+          rounded-2xl
+          shadow-lg
           text-center
           max-w-lg
           animate-fadeIn
@@ -44,21 +44,44 @@ export default function HomePage() {
         <p className="text-white mb-8">
           Platforma ogłoszeniowa Uniwersytetu Gdańskiego.
         </p>
-        <a
-          href="/login"
-          className="
-            inline-block
-            bg-[#002147]
-            hover:bg-[#001a3e]
-            text-white
-            font-semibold
-            py-2
-            px-4
-            rounded
-          "
-        >
-          Zaloguj się
-        </a>
+        <div className="flex flex-col gap-4 items-center">
+          <a
+            href="/login"
+            className="
+              w-64
+              text-center
+              bg-[#002147]
+              hover:bg-[#001a3e]
+              text-white
+              font-semibold
+              py-2
+              px-4
+              rounded
+              transition
+              duration-200
+            "
+          >
+            Zaloguj się
+          </a>
+          <a
+            href="https://logowanie.euczelnia.ug.edu.pl/login"
+            className="
+              w-64
+              text-center
+              bg-[#ff9900]
+              hover:bg-[#e68a00]
+              text-white
+              font-semibold
+              py-2
+              px-4
+              rounded
+              transition
+              duration-200
+            "
+          >
+            Zaloguj przy użyciu CAS
+          </a>
+        </div>
       </div>
     </main>
   );
