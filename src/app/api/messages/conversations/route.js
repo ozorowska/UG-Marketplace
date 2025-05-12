@@ -13,7 +13,7 @@ export async function GET(request) {
       return NextResponse.json({ error: "Nieautoryzowany" }, { status: 401 });
     }
 
-    // Znajdź użytkownika po emailu
+    // Znajdź usera po email
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       select: { id: true },
@@ -23,7 +23,7 @@ export async function GET(request) {
       return NextResponse.json({ error: "Brak użytkownika" }, { status: 404 });
     }
 
-    // Pobierz konwersacje jako buyer lub seller
+    // Pobierz konwersacje, gdzie user jest buyerem lub sellerem
     const convs = await prisma.conversation.findMany({
       where: {
         OR: [{ buyerId: user.id }, { sellerId: user.id }],
@@ -37,13 +37,7 @@ export async function GET(request) {
       orderBy: { createdAt: "desc" },
     });
 
-    // Dodaj pole 'participants' do każdego obiektu
-    const withParticipants = convs.map((conv) => ({
-      ...conv,
-      participants: [conv.buyer, conv.seller],
-    }));
-
-    return NextResponse.json(withParticipants, { status: 200 });
+    return NextResponse.json(convs, { status: 200 });
   } catch (error) {
     console.error("Błąd pobierania konwersacji:", error);
     return NextResponse.json({ error: "Błąd serwera" }, { status: 500 });
