@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { FaUser, FaPen, FaTrash, FaSignOutAlt } from "react-icons/fa";
+import { FaUser, FaPen, FaTrash, FaSignOutAlt, FaKey } from "react-icons/fa";
 
 import SidebarLayout from "../../components/SidebarLayout";
 import TopNavbar from "../../components/TopNavbar";
@@ -266,7 +266,7 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
       <TopNavbar />
       <SidebarLayout>
         <div className="max-w-4xl mx-auto p-6">
-          <h1 className="text-3xl font-bold mb-8">Profile</h1>
+          <h1 className="text-3xl font-bold mb-8">Profil</h1>
           {error && (
             <div className="bg-red-50 text-red-700 p-4 rounded mb-6">
               {error}
@@ -306,7 +306,7 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
                   className="px-4 py-2 bg-blue-600 text-white rounded"
                   disabled={isLoading}
                 >
-                  Choose Image
+                  Wybierz obraz
                 </button>
                 {profileImage && (
                   <button
@@ -314,7 +314,7 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
                     className="px-4 py-2 bg-green-600 text-white rounded"
                     disabled={isLoading}
                   >
-                    Upload
+                    Prześlij
                   </button>
                 )}
               </div>
@@ -330,7 +330,7 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
               </div>
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-600 mb-2">
-                  Name
+                  Imię
                 </label>
                 {!isEditingName ? (
   <div className="flex justify-between items-center p-3 bg-gray-50 rounded border">
@@ -353,7 +353,7 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
       className="px-4 py-2 bg-green-600 text-white rounded"
       disabled={isLoading}
     >
-      Save
+      Zapisz
     </button>
     <button
       onClick={() => {
@@ -363,7 +363,7 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
       className="px-4 py-2 bg-gray-500 text-white rounded"
       disabled={isLoading}
     >
-      Cancel
+      Zamknij
     </button>
   </div>
 )}
@@ -378,7 +378,7 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
                   className="w-full p-3 border rounded"
                   disabled={isLoading}
                 >
-                  <option value="">Select major</option>
+                  <option value="">Mój kierunek studiów</option>
                   {ugMajors.map((mjr) => (
                     <option key={mjr} value={mjr}>
                       {mjr}
@@ -389,110 +389,110 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
             </div>
           </div>
 
-          {/* Change Password */}
-          <div className="bg-white rounded shadow p-6 mb-8">
-            <h2 className="text-xl mb-4">Change Password</h2>
-            {isChangingPassword ? (
-              <div className="space-y-4">
-                <input
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="w-full p-3 border rounded"
-                  placeholder="Current password"
-                />
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full p-3 border rounded"
-                  placeholder="New password"
-                />
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full p-3 border rounded"
-                  placeholder="Confirm new password"
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={changePassword}
-                    className="px-4 py-2 bg-blue-600 text-white rounded"
-                    disabled={isLoading}
-                  >
-                    Change
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsChangingPassword(false);
-                      setCurrentPassword("");
-                      setNewPassword("");
-                      setConfirmPassword("");
-                    }}
-                    className="px-4 py-2 bg-gray-500 text-white rounded"
-                    disabled={isLoading}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button
-                onClick={() => setIsChangingPassword(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded"
-                disabled={isLoading}
-              >
-                Change Password
-              </button>
-            )}
-          </div>
 
           {/* Account Actions */}
-<div className="bg-white rounded shadow p-6 mb-8">
-  <h2 className="text-xl mb-4">Account Actions</h2>
-  <div className="flex flex-col gap-4">
-    <button
-      onClick={handleLogout}
-      className="px-6 py-3 bg-gray-200 text-gray-800 rounded"
-      disabled={isLoading}
-    >
-      <FaSignOutAlt size={16} /> Logout
-    </button>
-    {isDeleting ? (
-      <div className="flex flex-col gap-2">
-        <div className="text-red-700 font-bold">
-          Czy jesteś pewien? WSZYSTKO ZOSTANIE USUNIĘTE!!!!
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={deleteAccount}
-            className="px-6 py-3 bg-red-600 text-white rounded"
-            disabled={isLoading}
-          >
-            Confirm Delete
-          </button>
-          <button
-            onClick={() => setIsDeleting(false)}
-            className="px-6 py-3 bg-gray-500 text-white rounded"
-            disabled={isLoading}
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    ) : (
-      <button
-        onClick={() => setIsDeleting(true)}
-        className="px-6 py-3 bg-red-100 text-red-700 rounded"
-        disabled={isLoading}
-      >
-        <FaTrash size={16} /> Delete Account
-      </button>
-    )}
-  </div>
-</div>
+          <div className="bg-white rounded shadow p-6 mb-8">
+            <h2 className="text-xl mb-4">Moje konto</h2>
+            <div className="flex flex-col gap-4">
+              {/* Zmień hasło */}
+              {isChangingPassword ? (
+                <div className="space-y-4">
+                  <input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="w-full p-3 border rounded"
+                    placeholder="Obecne hasło"
+                  />
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full p-3 border rounded"
+                    placeholder="Nowe hasło"
+                  />
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full p-3 border rounded"
+                    placeholder="Potwierdź nowe hasło"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={changePassword}
+                      className="px-6 py-3 bg-blue-600 text-white rounded"
+                      disabled={isLoading}
+                    >
+                      Zmień
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsChangingPassword(false);
+                        setCurrentPassword("");
+                        setNewPassword("");
+                        setConfirmPassword("");
+                      }}
+                      className="px-6 py-3 bg-gray-500 text-white rounded"
+                      disabled={isLoading}
+                    >
+                      Zamknij
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setIsChangingPassword(true)}
+                  className="px-6 py-3 bg-gray-200 text-gray-800 rounded flex items-center gap-2"
+                  disabled={isLoading}
+                >
+                  <FaKey size={16} /> Zmień hasło
+                </button>
+              )}
 
+              {/* Wyloguj */}
+              <button
+                onClick={handleLogout}
+                className="px-6 py-3 bg-gray-200 text-gray-800 rounded flex items-center gap-2"
+                disabled={isLoading}
+              >
+                <FaSignOutAlt size={16} /> Wyloguj
+              </button>
+
+              {/* Usuń konto */}
+              {isDeleting ? (
+                <div className="flex flex-col gap-2">
+                  <div className="text-red-700 font-bold">
+                    Czy jesteś pewien? Wszystkie Twoje ogłoszenia i wiadomości zostaną trwale usunięte!
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={deleteAccount}
+                      className="px-6 py-3 bg-red-600 text-white rounded"
+                      disabled={isLoading}
+                    >
+                      Potwierdź usunięcie
+                    </button>
+                    <button
+                      onClick={() => setIsDeleting(false)}
+                      className="px-6 py-3 bg-gray-500 text-white rounded"
+                      disabled={isLoading}
+                    >
+                      Zamknij
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setIsDeleting(true)}
+                  className="px-6 py-3 bg-red-100 text-red-700 rounded flex items-center gap-2"
+                  disabled={isLoading}
+                >
+                  <FaTrash size={16} /> Usuń konto
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </SidebarLayout>
     </>

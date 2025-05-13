@@ -9,7 +9,6 @@ import SidebarLayout from "../../../components/SidebarLayout";
 import { IoArrowBack, IoSend } from "react-icons/io5";
 import { BsCheck, BsCheckAll, BsEmojiSmile } from "react-icons/bs";
 
-// Interfejsy dla typów danych
 interface Message {
   id: string;
   text: string;
@@ -55,6 +54,8 @@ export default function ChatPage() {
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [otherUser, setOtherUser] = useState<User | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<HTMLInputElement>(null);
 
@@ -82,7 +83,7 @@ export default function ChatPage() {
         const res = await fetch(`/api/messages/conversations/${conversationId}/messages`);
         const data = await res.json();
         setChat(data);
-        markMessagesAsRead(data);
+        setIsInitialLoad(false);
       } catch (error) {
         console.error("Błąd:", error);
       }
@@ -90,34 +91,67 @@ export default function ChatPage() {
     if (session) fetchMessages();
   }, [session, conversationId]);
 
-  const markMessagesAsRead = async (messages: Message[]) => {
-    if (!session) return;
+  // Oznaczanie wiadomości jako przeczytane - wywoływane automatycznie po załadowaniu
+  // oraz po otrzymaniu nowych wiadomości
+  useEffect(() => {
+    if (!session || isInitialLoad || chat.length === 0) return;
+    
     const sessionUser = session.user as SessionUser;
-    const unread = messages.filter(msg => msg.senderId !== sessionUser.id && !msg.read);
-    if (unread.length === 0) return;
-    await fetch(`/api/messages/conversations/${conversationId}/read`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" }
-    });
+    const unreadMessages = chat.filter(
+      msg => msg.senderId !== sessionUser.id && !msg.read
+    );
+    
+    if (unreadMessages.length > 0) {
+      markMessagesAsRead();
+    }
+  }, [chat, isInitialLoad, session]);
+
+  const markMessagesAsRead = async () => {
+    if (!session) return;
+    
+    try {
+      const response = await fetch(`/api/messages/conversations/${conversationId}/read`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+      
+      if (!response.ok) {
+        console.error("Błąd oznaczania wiadomości jako przeczytanych:", await response.text());
+      }
+    } catch (error) {
+      console.error("Wystąpił błąd podczas oznaczania wiadomości jako przeczytanych:", error);
+    }
   };
 
   useEffect(() => {
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY as string, {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER as string,
     });
+    
     const channel = pusher.subscribe(`conversation-${conversationId}`);
+    
+    // Odbieranie nowych wiadomości
     channel.bind("new-message", (data: { message: Message }) => {
       setChat(prev => [...prev, data.message]);
+      
+      // Automatycznie oznacz wiadomości jako przeczytane, jeśli nie są od nas
       if (session) {
         const sessionUser = session.user as SessionUser;
         if (data.message.senderId !== sessionUser.id) {
-          markMessagesAsRead([data.message]);
+          markMessagesAsRead();
         }
       }
     });
+    
+    // Odbieranie informacji o przeczytaniu wiadomości
     channel.bind("message-read", (data: { messageIds: string[] }) => {
-      setChat(prev => prev.map(msg => data.messageIds.includes(msg.id) ? { ...msg, read: true } : msg));
+      setChat(prev => 
+        prev.map(msg => 
+          data.messageIds.includes(msg.id) ? { ...msg, read: true } : msg
+        )
+      );
     });
+    
     return () => {
       channel.unbind_all();
       channel.unsubscribe();
@@ -133,14 +167,19 @@ export default function ChatPage() {
     setIsSending(true);
     const sessionUser = session.user as SessionUser;
     const payload = { text: message.trim(), senderId: sessionUser.id };
-    const res = await fetch(`/api/messages/conversations/${conversationId}/messages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (res.ok) setMessage("");
-    messageInputRef.current?.focus();
-    setIsSending(false);
+    try {
+      const res = await fetch(`/api/messages/conversations/${conversationId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) setMessage("");
+      messageInputRef.current?.focus();
+    } catch (error) {
+      console.error("Błąd podczas wysyłania wiadomości:", error);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -160,7 +199,6 @@ export default function ChatPage() {
       <TopNavbar />
       <SidebarLayout>
         <div className="flex flex-col h-full max-h-screen overflow-hidden bg-gray-50">
-          {/* Nagłówek czatu */}
           <header className="bg-white shadow-sm z-10 py-3 px-4 flex items-center sticky top-0 w-full">
             <button onClick={() => router.push("/messages")} className="mr-3 p-2 rounded-full hover:bg-gray-100">
               <IoArrowBack size={20} className="text-gray-600" />
@@ -182,7 +220,6 @@ export default function ChatPage() {
             </div>
           </header>
 
-          {/* Główna zawartość - wiadomości */}
           <main className="flex-1 p-4 overflow-y-auto">
             {chat.map((msg) => {
               const sessionUser = session.user as SessionUser;
@@ -199,7 +236,10 @@ export default function ChatPage() {
                       <span>{formatMessageTime(msg.createdAt)}</span>
                       {isFromMe && (
                         <span className="ml-1">
-                          {msg.read ? <BsCheckAll size={14} className="text-blue-500" /> : <BsCheck size={14} />}
+                          {msg.read ? 
+                            <BsCheckAll size={14} className="text-blue-500" /> : 
+                            <BsCheck size={14} className="text-blue-500" />
+                          }
                         </span>
                       )}
                     </div>
@@ -210,7 +250,6 @@ export default function ChatPage() {
             <div ref={messagesEndRef} />
           </main>
 
-          {/* Pasek dolny bez ikony obrazu */}
           <footer className="p-3 bg-white border-t border-gray-200 sticky bottom-0">
             <div className="flex items-center">
               <div className="flex-1 mx-2 relative">
@@ -223,12 +262,31 @@ export default function ChatPage() {
                   placeholder="Wpisz wiadomość..."
                   className="w-full border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <button
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 rounded-full text-gray-500 hover:bg-gray-100"
-                  aria-label="Emoji"
-                >
-                  <BsEmojiSmile size={18} />
-                </button>
+                <div className="absolute right-10 top-1/2 transform -translate-y-1/2">
+                  <button
+                    onClick={() => setShowEmojiPicker(prev => !prev)}
+                    className="p-1.5 rounded-full text-gray-500 hover:bg-gray-100"
+                    aria-label="Emoji"
+                  >
+                    <BsEmojiSmile size={18} />
+                  </button>
+                  {showEmojiPicker && (
+                    <div className="absolute bottom-12 right-0 z-50 bg-white border border-gray-200 rounded-lg p-2 shadow-md text-xl">
+                      {["😀", "😂", "😍", "👍", "🙏", "🎓", "😎"].map((emoji) => (
+                        <button
+                          key={emoji}
+                          className="p-1 hover:bg-gray-100 rounded"
+                          onClick={() => {
+                            setMessage(prev => prev + emoji);
+                            setShowEmojiPicker(false);
+                          }}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
               <button
                 onClick={sendMessage}
