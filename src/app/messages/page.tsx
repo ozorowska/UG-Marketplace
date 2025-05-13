@@ -8,7 +8,6 @@ import SidebarLayout from "../../components/SidebarLayout";
 import { IoMdChatbubbles } from "react-icons/io";
 import { BsCheckAll, BsCheck } from "react-icons/bs";
 
-// Interfejsy
 interface Message {
   id: string;
   text: string;
@@ -67,11 +66,25 @@ export default function MessagesDashboard() {
       const res = await fetch("/api/messages/conversations");
       if (!res.ok) throw new Error("Błąd pobierania rozmów");
       const data = await res.json();
-      const sortedConversations = data.sort(
-        (a: Conversation, b: Conversation) =>
-          new Date(b.updatedAt || b.createdAt).getTime() -
-          new Date(a.updatedAt || a.createdAt).getTime()
-      );
+
+      const sessionUser = session?.user as SessionUser;
+
+      const sortedConversations = data.sort((a: Conversation, b: Conversation) => {
+        const aLast = a.messages[0];
+        const bLast = b.messages[0];
+
+        const aUnread = a.messages.filter(m => !m.read && m.senderId !== sessionUser.id).length;
+        const bUnread = b.messages.filter(m => !m.read && m.senderId !== sessionUser.id).length;
+
+        if (aUnread && !bUnread) return -1;
+        if (!aUnread && bUnread) return 1;
+
+        const aDate = new Date(aLast?.createdAt || a.updatedAt || a.createdAt);
+        const bDate = new Date(bLast?.createdAt || b.updatedAt || b.createdAt);
+
+        return bDate.getTime() - aDate.getTime();
+      });
+
       setConversations(sortedConversations);
     } catch (error) {
       console.error("Błąd przy pobieraniu rozmów:", error);
@@ -89,12 +102,12 @@ export default function MessagesDashboard() {
     const now = new Date();
 
     if (date.toDateString() === now.toDateString()) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     }
 
     const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
     if (diffDays < 7) {
-      return date.toLocaleDateString([], { weekday: 'short' });
+      return date.toLocaleDateString([], { weekday: "short" });
     }
 
     return date.toLocaleDateString();
@@ -109,6 +122,8 @@ export default function MessagesDashboard() {
   };
 
   if (!session) return null;
+
+  const sessionUser = session.user as SessionUser;
 
   return (
     <>
@@ -132,9 +147,7 @@ export default function MessagesDashboard() {
               <div className="bg-blue-50 p-4 rounded-full mb-4">
                 <IoMdChatbubbles className="text-blue-500" size={32} />
               </div>
-              <h3 className="text-xl font-medium text-gray-800 mb-2">
-                Brak wiadomości
-              </h3>
+              <h3 className="text-xl font-medium text-gray-800 mb-2">Brak wiadomości</h3>
               <p className="text-gray-500 text-center max-w-sm">
                 Nie masz jeszcze żadnych rozmów. Przeglądaj oferty i skontaktuj się z innymi studentami.
               </p>
@@ -142,17 +155,21 @@ export default function MessagesDashboard() {
           ) : (
             <div className="space-y-3">
               {conversations.map((convo) => {
+                const unreadMessages = convo.messages.filter(
+                  (msg) => msg.senderId !== sessionUser.id && !msg.read
+                );
+                const unreadCount = unreadMessages.length;
+                const isRead = unreadCount === 0;
                 const lastMessage = convo.messages[0];
-                const isRead = lastMessage?.read || false;
-                const sessionUser = session.user as SessionUser;
-                const wasISender = lastMessage?.senderId === sessionUser.id;
                 const otherUser = getOtherParticipant(convo);
 
                 return (
                   <div
                     key={convo.id}
                     onClick={() => handleConversationClick(convo.id)}
-                    className="flex items-center p-4 bg-white rounded-lg shadow-sm hover:shadow transition-all cursor-pointer border border-gray-100"
+                    className={`flex items-center p-4 rounded-lg shadow-sm hover:shadow transition-all cursor-pointer border ${
+                      !isRead ? "bg-blue-50 border-blue-100" : "bg-white border-gray-100"
+                    }`}
                   >
                     <div className="w-12 h-12 rounded-full bg-gray-100 flex-shrink-0 mr-4 overflow-hidden">
                       {otherUser?.image ? (
@@ -176,7 +193,7 @@ export default function MessagesDashboard() {
 
                     <div className="flex-grow overflow-hidden">
                       <div className="flex justify-between items-center mb-1">
-                        <span className={`font-medium ${!isRead && !wasISender ? "text-blue-600" : "text-gray-800"}`}>
+                        <span className={`text-sm ${!isRead ? "text-black font-bold" : "text-gray-800"}`}>
                           {otherUser.name || "Użytkownik"}
                         </span>
                         <span className="text-xs text-gray-400">
@@ -185,20 +202,27 @@ export default function MessagesDashboard() {
                       </div>
 
                       <div className="flex items-center">
-                        <p className={`text-sm truncate mr-2 ${!isRead && !wasISender ? "text-gray-800 font-medium" : "text-gray-500"}`}>
+                        <p className={`text-sm truncate mr-2 ${!isRead ? "text-black font-bold" : "text-gray-500"}`}>
                           {lastMessage?.text || "Rozpocznij rozmowę"}
                         </p>
-                        {lastMessage && wasISender && (
+                        {lastMessage?.senderId === sessionUser.id && (
                           <span className="flex-shrink-0 text-gray-400">
-                            {isRead ? <BsCheckAll size={16} className="text-blue-500" /> : <BsCheck size={16} />}
+                            {lastMessage.read ? (
+                              <BsCheckAll size={16} className="text-blue-500" />
+                            ) : (
+                              <BsCheck size={16} />
+                            )}
+                          </span>
+                        )}
+                        {unreadCount > 0 && (
+                          <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-semibold">
+                            {unreadCount}
                           </span>
                         )}
                       </div>
 
                       <div className="mt-1">
-                        <span className="text-xs text-gray-400">
-                          {convo.offer.title}
-                        </span>
+                        <span className="text-xs text-gray-400">{convo.offer.title}</span>
                       </div>
                     </div>
                   </div>

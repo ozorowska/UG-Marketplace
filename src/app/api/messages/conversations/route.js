@@ -32,7 +32,7 @@ export async function GET(request) {
         offer: { select: { title: true, imageUrl: true } },
         buyer: { select: { id: true, name: true, image: true } },
         seller: { select: { id: true, name: true, image: true } },
-        messages: { orderBy: { createdAt: "desc" }, take: 1 },
+        messages: { orderBy: { createdAt: "desc" }, where: { read: false } },
       },
       orderBy: { createdAt: "desc" },
     });

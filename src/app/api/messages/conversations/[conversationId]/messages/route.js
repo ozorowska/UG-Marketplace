@@ -32,11 +32,18 @@ export async function POST(req, { params }) {
     });
 
     // Trigger w Pusherze
+    // Trigger w Pusherze dla czatu (czat klienta)
     await pusher.trigger(`conversation-${conversationId}`, "new-message", {
       message: newMessage,
       sender: senderId,
       conversationId,
     });
+
+    // Trigger dla sidebara (licznik)
+    await pusher.trigger("global-messages", "new-message", {
+      conversationId,
+    });
+
 
     return new Response(JSON.stringify(newMessage), { status: 200 });
   } catch (error) {

@@ -203,7 +203,11 @@ export default function ChatPage() {
                       <span>{formatMessageTime(msg.createdAt)}</span>
                       {isFromMe && (
                         <span className="ml-1">
-                          {msg.read ? <BsCheckAll size={14} className="text-blue-500" /> : <BsCheck size={14} />}
+                          {msg.read ? (
+                            <BsCheckAll size={14} className="text-blue-500" />
+                          ) : (
+                            <BsCheck size={14} className="text-gray-400" />
+                          )}
                         </span>
                       )}
                     </div>
