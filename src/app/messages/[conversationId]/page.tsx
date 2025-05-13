@@ -48,17 +48,22 @@ interface SessionUser {
 export default function ChatPage() {
   const { conversationId } = useParams() as { conversationId: string };
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState<Message[]>([]);
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [otherUser, setOtherUser] = useState<User | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (status !== "loading" && !session) {
+      router.push("/login");
+    }
+  }, [session, status, router]);
+  
   useEffect(() => {
     async function fetchConversationDetails() {
       try {
@@ -83,7 +88,7 @@ export default function ChatPage() {
         const res = await fetch(`/api/messages/conversations/${conversationId}/messages`);
         const data = await res.json();
         setChat(data);
-        setIsInitialLoad(false);
+        markMessagesAsRead(data);
       } catch (error) {
         console.error("Błąd:", error);
       }
@@ -91,67 +96,34 @@ export default function ChatPage() {
     if (session) fetchMessages();
   }, [session, conversationId]);
 
-  // Oznaczanie wiadomości jako przeczytane - wywoływane automatycznie po załadowaniu
-  // oraz po otrzymaniu nowych wiadomości
-  useEffect(() => {
-    if (!session || isInitialLoad || chat.length === 0) return;
-    
-    const sessionUser = session.user as SessionUser;
-    const unreadMessages = chat.filter(
-      msg => msg.senderId !== sessionUser.id && !msg.read
-    );
-    
-    if (unreadMessages.length > 0) {
-      markMessagesAsRead();
-    }
-  }, [chat, isInitialLoad, session]);
-
-  const markMessagesAsRead = async () => {
+  const markMessagesAsRead = async (messages: Message[]) => {
     if (!session) return;
-    
-    try {
-      const response = await fetch(`/api/messages/conversations/${conversationId}/read`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" }
-      });
-      
-      if (!response.ok) {
-        console.error("Błąd oznaczania wiadomości jako przeczytanych:", await response.text());
-      }
-    } catch (error) {
-      console.error("Wystąpił błąd podczas oznaczania wiadomości jako przeczytanych:", error);
-    }
+    const sessionUser = session.user as SessionUser;
+    const unread = messages.filter(msg => msg.senderId !== sessionUser.id && !msg.read);
+    if (unread.length === 0) return;
+    await fetch(`/api/messages/conversations/${conversationId}/read`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" }
+    });
   };
 
   useEffect(() => {
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY as string, {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER as string,
     });
-    
     const channel = pusher.subscribe(`conversation-${conversationId}`);
-    
-    // Odbieranie nowych wiadomości
     channel.bind("new-message", (data: { message: Message }) => {
       setChat(prev => [...prev, data.message]);
-      
-      // Automatycznie oznacz wiadomości jako przeczytane, jeśli nie są od nas
       if (session) {
         const sessionUser = session.user as SessionUser;
         if (data.message.senderId !== sessionUser.id) {
-          markMessagesAsRead();
+          markMessagesAsRead([data.message]);
         }
       }
     });
-    
-    // Odbieranie informacji o przeczytaniu wiadomości
     channel.bind("message-read", (data: { messageIds: string[] }) => {
-      setChat(prev => 
-        prev.map(msg => 
-          data.messageIds.includes(msg.id) ? { ...msg, read: true } : msg
-        )
-      );
+      setChat(prev => prev.map(msg => data.messageIds.includes(msg.id) ? { ...msg, read: true } : msg));
     });
-    
     return () => {
       channel.unbind_all();
       channel.unsubscribe();
@@ -167,19 +139,14 @@ export default function ChatPage() {
     setIsSending(true);
     const sessionUser = session.user as SessionUser;
     const payload = { text: message.trim(), senderId: sessionUser.id };
-    try {
-      const res = await fetch(`/api/messages/conversations/${conversationId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) setMessage("");
-      messageInputRef.current?.focus();
-    } catch (error) {
-      console.error("Błąd podczas wysyłania wiadomości:", error);
-    } finally {
-      setIsSending(false);
-    }
+    const res = await fetch(`/api/messages/conversations/${conversationId}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) setMessage("");
+    messageInputRef.current?.focus();
+    setIsSending(false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -236,10 +203,7 @@ export default function ChatPage() {
                       <span>{formatMessageTime(msg.createdAt)}</span>
                       {isFromMe && (
                         <span className="ml-1">
-                          {msg.read ? 
-                            <BsCheckAll size={14} className="text-blue-500" /> : 
-                            <BsCheck size={14} className="text-blue-500" />
-                          }
+                          {msg.read ? <BsCheckAll size={14} className="text-blue-500" /> : <BsCheck size={14} />}
                         </span>
                       )}
                     </div>

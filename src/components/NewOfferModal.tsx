@@ -173,10 +173,12 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
 
       alert("Oferta dodana!");
 
-      // Wywołujemy callback onOfferAdded aby odświeżyć listę ofert
-      await onOfferAdded();
-
+      if (typeof onOfferAdded === "function") {
+        await onOfferAdded();
+      }
+      
       onClose();
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : "Wystąpił nieznany błąd");
     }

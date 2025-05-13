@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { FaBars, FaSearch, FaTimes, FaPlus } from "react-icons/fa";
 import NewOfferModal from "./NewOfferModal";
+
 
 interface TopNavbarProps {
   onHamburgerClick?: () => void;
@@ -11,6 +12,7 @@ interface TopNavbarProps {
 
 export default function TopNavbar({ onHamburgerClick }: TopNavbarProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState(""); // stan dla zapytania
   const [showNewOfferModal, setShowNewOfferModal] = useState(false);
@@ -121,10 +123,17 @@ const handleSearch = () => {
       </header>
 
       {showNewOfferModal && (
-        <NewOfferModal onClose={() => setShowNewOfferModal(false)} onOfferAdded={function (): Promise<void> {
-          throw new Error("Function not implemented.");
-        } } />
+        <NewOfferModal
+        onClose={() => setShowNewOfferModal(false)}
+        onOfferAdded={async () => {
+          if (pathname === "/dashboard") {
+            router.refresh(); // ← to odświeży dashboard bez przeładowywania strony
+          }
+        }}
+      />
+      
       )}
+
     </>
   );
 }

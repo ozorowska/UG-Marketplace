@@ -8,6 +8,7 @@ import { useSession } from "next-auth/react";
 interface OfferDetailModalProps {
   offerId: string;
   onClose: () => void;
+  onFavoriteToggle?: (offerId: string, isNowFavorite: boolean) => void;
 }
 
 type Offer = {
@@ -27,7 +28,7 @@ type Offer = {
   tags?: { id: string; name: string }[];
 };
 
-export default function OfferDetailModal({ offerId, onClose }: OfferDetailModalProps) {
+export default function OfferDetailModal({ offerId, onClose, onFavoriteToggle }: OfferDetailModalProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const [offer, setOffer] = useState<Offer | null>(null);
@@ -35,6 +36,7 @@ export default function OfferDetailModal({ offerId, onClose }: OfferDetailModalP
   const [parsedDetails, setParsedDetails] = useState<{ [key: string]: any }>({});
   const [isFavorite, setIsFavorite] = useState(false);
   const [isImageExpanded, setIsImageExpanded] = useState(false);
+
 
   useEffect(() => {
     async function fetchOffer() {
@@ -92,19 +94,31 @@ export default function OfferDetailModal({ offerId, onClose }: OfferDetailModalP
       router.push("/login");
       return;
     }
+  
+    const nowFav = !isFavorite;
+    const method = nowFav ? "POST" : "DELETE";
+  
     try {
-      const method = isFavorite ? "DELETE" : "POST";
       const res = await fetch("/api/favorites", {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ offerId }),
       });
-      if (!res.ok) throw new Error(`Nie udało się ${isFavorite ? "usunąć z" : "dodać do"} ulubionych`);
-      setIsFavorite(!isFavorite);
+  
+      if (!res.ok) {
+        throw new Error("Błąd przy zmianie ulubionych");
+      }
+  
+      setIsFavorite(nowFav);
+  
+      if (onFavoriteToggle) {
+        onFavoriteToggle(offerId, nowFav);
+      }
     } catch (err) {
-      console.error("Błąd podczas zmiany ulubionych:", err);
+      console.error("Błąd:", err);
     }
   };
+  
 
   const toggleImageExpand = () => {
     setIsImageExpanded(!isImageExpanded);
@@ -193,6 +207,7 @@ export default function OfferDetailModal({ offerId, onClose }: OfferDetailModalP
               >
                 <FaHeart className={isFavorite ? "text-red-500" : "text-gray-400"} />
               </button>
+              {(session?.user as any)?.id !== offer.user?.id && (
               <button
                 onClick={handleSendMessage}
                 className="p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -200,6 +215,7 @@ export default function OfferDetailModal({ offerId, onClose }: OfferDetailModalP
               >
                 <FaEnvelope className="text-gray-600" />
               </button>
+              )}
             </div>
           </div>
 
@@ -309,15 +325,17 @@ export default function OfferDetailModal({ offerId, onClose }: OfferDetailModalP
           </div>
 
           {/* Footer */}
-          <div className="sticky bottom-0 bg-white border-t p-4 flex justify-end">
-            <button
-              onClick={handleSendMessage}
-              className="px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm sm:text-base"
-            >
-              <FaEnvelope />
-              <span>Wyślij wiadomość</span>
-            </button>
-          </div>
+          {(session?.user as any)?.id !== offer.user?.id && (
+            <div className="sticky bottom-0 bg-white border-t p-4 flex justify-end">
+              <button
+                onClick={handleSendMessage}
+                className="px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm sm:text-base"
+              >
+                <FaEnvelope />
+                <span>Wyślij wiadomość</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

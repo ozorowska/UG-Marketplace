@@ -54,6 +54,24 @@ export default function FavoritesPage() {
 
   if (!session) return null;
 
+  const toggleFavorite = async (offerId: string) => {
+    try {
+      const res = await fetch("/api/favorites", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ offerId }),
+      });
+  
+      if (!res.ok) throw new Error("Nie udało się usunąć z ulubionych");
+  
+      // usuń z widoku
+      setFavoriteOffers((prev) => prev.filter((offer) => offer.id !== offerId));
+    } catch (error) {
+      console.error("Błąd podczas usuwania z ulubionych:", error);
+    }
+  };
+  
+
   const categories = [
     { value: "KSIAZKI", label: "Książki", icon: <BsJournalBookmark className="mr-2" /> },
     { value: "NOTATKI", label: "Notatki", icon: <BsJournalBookmark className="mr-2" /> },
@@ -107,7 +125,16 @@ export default function FavoritesPage() {
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    <FaHeart className="text-red-500" size={18} />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation(); // żeby nie otwierać modala
+                        toggleFavorite(offer.id);
+                      }}
+                      className="p-1 rounded-full hover:bg-gray-100"
+                      title="Usuń z ulubionych"
+                    >
+                      <FaHeart className="text-red-500" size={18} />
+                    </button>
                   </div>
                 </div>
               );
@@ -117,9 +144,15 @@ export default function FavoritesPage() {
       </SidebarLayout>
       {selectedOfferId && (
         <OfferDetailModal
-          offerId={selectedOfferId}
-          onClose={() => setSelectedOfferId(null)}
-        />
+        offerId={selectedOfferId}
+        onClose={() => setSelectedOfferId(null)}
+        onFavoriteToggle={(id, isNowFavorite) => {
+          if (!isNowFavorite) {
+            setFavoriteOffers(favoriteOffers.filter((offer) => offer.id !== id));
+          }
+        }}
+      />
+      
       )}
     </>
   );

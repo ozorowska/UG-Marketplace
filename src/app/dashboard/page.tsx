@@ -126,7 +126,7 @@ export default function DashboardPage() {
       sorted = sorted.filter((offer) => offer.major === activeMajor);
     }
     setFilteredOffers(sorted);
-  }, [offers, sortOption, activeCategory, activeMajor]);
+  }, [offers, sortOption, activeCategory, activeMajor, favoriteOffers]);
 
   const toggleFavorite = async (offerId: string) => {
     try {
@@ -407,9 +407,17 @@ export default function DashboardPage() {
       )}
       {selectedOfferId && (
         <OfferDetailModal
-          offerId={selectedOfferId}
-          onClose={() => setSelectedOfferId(null)}
-        />
+        offerId={selectedOfferId}
+        onClose={() => setSelectedOfferId(null)}
+        onFavoriteToggle={(id, isFav) => {
+          if (isFav) {
+            setFavoriteOffers([...favoriteOffers, id]);
+          } else {
+            setFavoriteOffers(favoriteOffers.filter((favId) => favId !== id));
+          }
+        }}
+      />
+      
       )}
     </>
   );
