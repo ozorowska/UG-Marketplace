@@ -14,6 +14,7 @@ import {
 } from "react-icons/fa";
 import TopNavbar from "./TopNavbar";
 import Pusher from "pusher-js";
+import NewOfferModal from "./NewOfferModal";
 
 type SidebarLayoutProps = {
   children: ReactNode;
@@ -23,6 +24,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showNewOfferModal, setShowNewOfferModal] = useState(false);
 
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
   const closeSidebar = () => setSidebarOpen(false);
@@ -121,13 +123,19 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           </>,
           "/profile"
         )}
-        {sidebarItem(
-          <>
-            <FaPlus className="text-lg" /> Dodaj ofertę
-          </>,
-          "/offer/new"
-        )}
+  
+        {/* Tylko na mobilu przycisk dodawania oferty */}
+        <li
+          className="md:hidden flex items-center gap-4 py-2 px-4 text-gray-700 hover:bg-gray-100 hover:text-[#002d73] rounded cursor-pointer"
+          onClick={() => {
+            closeSidebar();
+            setShowNewOfferModal(true);
+          }}
+        >
+          <FaPlus className="text-lg" /> Dodaj ofertę
+        </li>
       </ul>
+  
       <button
         onClick={() => signOut()}
         className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded shadow transition-colors"
@@ -136,7 +144,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       </button>
     </div>
   );
-
+  
   return (
     <div className="flex h-screen">
       <TopNavbar onHamburgerClick={toggleSidebar} />
@@ -173,6 +181,16 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       <main className="flex-1 bg-gray-50 p-6 md:ml-64 mt-16 overflow-y-auto">
         {children}
       </main>
+
+      {/* Modal dodawania nowej oferty */}
+      {showNewOfferModal && (
+         <NewOfferModal
+         onClose={() => setShowNewOfferModal(false)}
+         onOfferAdded={async () => {
+           router.refresh();
+         }}
+       />
+      )}
     </div>
   );
 }
