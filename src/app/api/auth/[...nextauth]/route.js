@@ -29,6 +29,9 @@ const handler = NextAuth({
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
         })
+        if (!user.emailVerified) {
+          throw new Error("Musisz potwierdzić swój adres email przed zalogowaniem.")
+        }        
         if (!user) {
           throw new Error("Nie ma takiego użytkownika")
         }

@@ -12,6 +12,8 @@ model User {
   email          String         @unique
   name           String?
   hashedPassword String
+  emailVerified  Boolean  @default(false)
+  verificationToken String?
   major          String?        // Nowe pole: kierunek studiów
   image          String?        // Nowe pole: ścieżka do zdjęcia profilowego
   createdAt      DateTime       @default(now())
