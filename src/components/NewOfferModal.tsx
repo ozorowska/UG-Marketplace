@@ -61,7 +61,7 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
 
   // Generujemy lata do wyboru (ostatnie 30 lat)
   const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 30 }, (_, i) => (currentYear - i).toString());
+  const years = Array.from({ length: 100 }, (_, i) => (currentYear - i).toString());
 
   // Dni tygodnia do wyboru
   const daysOfWeek = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"];
@@ -309,10 +309,10 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder={
-                    category === "KSIAZKI" ? "Np. Matematyka dla studentów" : 
-                    category === "NOTATKI" ? "Np. Notatki z Podstaw Ekonomii" :
-                    category === "KOREPETYCJE" ? "Np. Korepetycje z Analizy Matematycznej" :
-                    "Np. Kalkulator naukowy"
+                    category === "KSIAZKI" ? "Matematyka dla studentów" : 
+                    category === "NOTATKI" ? "Notatki z Podstaw Ekonomii" :
+                    category === "KOREPETYCJE" ? "Korepetycje z Analizy Matematycznej" :
+                    "Kalkulator naukowy"
                   }
                   required
                 />
@@ -331,7 +331,7 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
                         className="w-full p-2 border rounded"
                         value={author}
                         onChange={(e) => setAuthor(e.target.value)}
-                        placeholder="Np. Jan Kowalski"
+                        placeholder="Jan Kowalski"
                         required
                       />
                     </div>
@@ -344,7 +344,7 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
                         className="w-full p-2 border rounded"
                         value={publisher}
                         onChange={(e) => setPublisher(e.target.value)}
-                        placeholder="Np. PWN"
+                        placeholder="PWN"
                         required
                       />
                     </div>
@@ -506,10 +506,10 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder={
-                    category === "KSIAZKI" ? "Opisz szczegóły książki, dodatkowe informacje..." : 
-                    category === "NOTATKI" ? "Opisz zawartość notatek, z jakiego semestru pochodzą..." :
-                    category === "KOREPETYCJE" ? "Napisz coś o sobie, swoim doświadczeniu w nauczaniu..." :
-                    "Podaj szczegóły oferty..."
+                    category === "KSIAZKI" ? "Tu wpisz dodatkowe informacje" : 
+                    category === "NOTATKI" ? "Opisz swoje notatki, ich formę, treść, czego dotyczą" :
+                    category === "KOREPETYCJE" ? "Napisz coś o sobie, daj się poznać!" :
+                    "Podaj szczegóły oferty"
                   }
                   required
                 />
@@ -553,7 +553,7 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
                   min="0"
                   step="0.01"
                   required
-                  placeholder={category === "KOREPETYCJE" ? "Np. 50" : "Np. 30"}
+                  placeholder={category === "KOREPETYCJE" ? "Cena za godzinę" : "0zł = oddam za darmo!"}
                 />
                 {price === "0" && (
                   <p className="text-sm text-gray-500 mt-1">
@@ -610,7 +610,7 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
                   <input
                     type="text"
                     className="flex-1 p-2 border rounded-l"
-                    placeholder="Dodaj tag... np. semestr1, analiza, studia"
+                    placeholder="Pomóż się znaleść! #zadarmo #wymiana #gdansk"
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
                     onKeyDown={(e) => {

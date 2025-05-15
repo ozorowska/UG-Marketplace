@@ -87,6 +87,7 @@ export default function LoginPage(): JSX.Element {
               <p className="text-red-500 text-sm text-center">{error}</p>
             )}
 
+          <div className="space-y-2">
             <div>
               <button
                 type="submit"
@@ -95,6 +96,16 @@ export default function LoginPage(): JSX.Element {
                 Zaloguj
               </button>
             </div>
+            <div>
+              <a
+                href="https://logowanie.euczelnia.ug.edu.pl/login"
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-[#ff9900] hover:bg-[#e68a00] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#002147]"
+              >
+                Zaloguj przy użyciu CAS
+              </a>
+            </div>
+          </div>
+
           </form>
           <div className="flex items-center justify-between text-sm">
             <a href="#" className="font-medium text-[#002147] hover:text-[#001a3e]">

@@ -32,7 +32,13 @@ export async function GET(request) {
         offer: { select: { title: true, imageUrl: true } },
         buyer: { select: { id: true, name: true, image: true } },
         seller: { select: { id: true, name: true, image: true } },
-        messages: { orderBy: { createdAt: "desc" }, where: { read: false } },
+        messages: {
+          orderBy: { createdAt: "desc" },
+          where: {
+            read: false,
+            NOT: { senderId: user.id }, // tylko wiadomości nieprzeczytane OD INNYCH
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });

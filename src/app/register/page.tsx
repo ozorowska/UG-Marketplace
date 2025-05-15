@@ -133,6 +133,7 @@ export default function RegisterPage(): JSX.Element {
                 Zarejestruj
               </button>
             </div>
+            
           </form>
 
           <div className="flex items-center justify-center text-sm">

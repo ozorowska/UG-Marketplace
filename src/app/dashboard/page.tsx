@@ -354,13 +354,18 @@ export default function DashboardPage() {
                     {offer.tags.length > 0 && (
                       <div className="mt-auto pt-2 flex flex-wrap gap-1.5">
                         {offer.tags.slice(0, 3).map((tag) => (
-                          <span
+                          <button
                             key={tag.id}
-                            className="bg-gray-100 text-gray-700 text-xs px-2.5 py-1 rounded-full"
+                            onClick={(e) => {
+                              e.stopPropagation(); // zapobiega otwarciu modala
+                              router.push(`/dashboard?q=${encodeURIComponent(tag.name)}`);
+                            }}
+                            className="bg-gray-100 text-gray-700 text-xs px-2.5 py-1 rounded-full hover:bg-gray-200 transition-colors"
                           >
                             #{tag.name}
-                          </span>
+                          </button>
                         ))}
+
                       </div>
                     )}
                     <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center">

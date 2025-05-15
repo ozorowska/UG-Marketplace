@@ -203,7 +203,7 @@ export default function MessagesDashboard() {
 
                       <div className="flex items-center">
                         <p className={`text-sm truncate mr-2 ${!isRead ? "text-black font-bold" : "text-gray-500"}`}>
-                          {lastMessage?.text || "Rozpocznij rozmowę"}
+                          {lastMessage?.text || "Napisz do mnie!"}
                         </p>
                         {lastMessage?.senderId === sessionUser.id && (
                           <span className="flex-shrink-0 text-gray-400">

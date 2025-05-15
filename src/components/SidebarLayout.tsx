@@ -1,8 +1,8 @@
 "use client";
 
 import React, { ReactNode, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { useRouter, usePathname } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
 import {
   FaHome,
   FaTimes,
@@ -13,15 +13,26 @@ import {
   FaPlus,
 } from "react-icons/fa";
 import TopNavbar from "./TopNavbar";
-import Pusher from "pusher-js";
 import NewOfferModal from "./NewOfferModal";
+import Pusher from "pusher-js";
 
 type SidebarLayoutProps = {
   children: ReactNode;
 };
 
+type SessionUser = {
+  id: string;
+  name?: string;
+  email?: string;
+  image?: string;
+};
+
 export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const { data: session } = useSession();
+  const sessionUser = session?.user as SessionUser;
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNewOfferModal, setShowNewOfferModal] = useState(false);
@@ -33,8 +44,10 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
     router.push(path);
   };
 
-  // Pobieranie liczby nieprzeczytanych wiadomości
+  // Liczy tylko nieprzeczytane PRZYCHODZĄCE wiadomości
   const fetchUnreadMessages = async () => {
+    if (!sessionUser?.id) return;
+
     try {
       const res = await fetch("/api/messages/conversations");
       const data = await res.json();
@@ -42,7 +55,9 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
       data.forEach((conv: any) => {
         conv.messages.forEach((msg: any) => {
-          if (!msg.read) count++;
+          if (!msg.read && msg.senderId !== sessionUser.id) {
+            count++;
+          }
         });
       });
 
@@ -54,23 +69,26 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
   useEffect(() => {
     fetchUnreadMessages();
-
-    // 🔁 Pusher: nasłuchiwanie nowej wiadomości
+  
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
     });
-
-    // Nasłuchujemy na wszystkich konwersacjach (można zmienić)
+  
     const channel = pusher.subscribe("global-messages");
     channel.bind("new-message", () => {
-      fetchUnreadMessages(); // po nowej wiadomości aktualizujemy licznik
+      fetchUnreadMessages();
     });
-
+  
+    channel.bind("message-read", () => {
+      fetchUnreadMessages(); // DODANE
+    });
+  
     return () => {
       channel.unbind_all();
       channel.unsubscribe();
     };
-  }, []);
+  }, [sessionUser?.id]);
+  
 
   const MessageButton = () => (
     <div className="flex items-center justify-between w-full pr-2">
@@ -123,8 +141,8 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           </>,
           "/profile"
         )}
-  
-        {/* Tylko na mobilu przycisk dodawania oferty */}
+
+        {/* Tylko mobilny przycisk ➕ otwierający modal */}
         <li
           className="md:hidden flex items-center gap-4 py-2 px-4 text-gray-700 hover:bg-gray-100 hover:text-[#002d73] rounded cursor-pointer"
           onClick={() => {
@@ -135,7 +153,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           <FaPlus className="text-lg" /> Dodaj ofertę
         </li>
       </ul>
-  
+
       <button
         onClick={() => signOut()}
         className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded shadow transition-colors"
@@ -144,7 +162,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       </button>
     </div>
   );
-  
+
   return (
     <div className="flex h-screen">
       <TopNavbar onHamburgerClick={toggleSidebar} />
@@ -182,14 +200,16 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
         {children}
       </main>
 
-      {/* Modal dodawania nowej oferty */}
+      {/* Modal dodawania oferty */}
       {showNewOfferModal && (
-         <NewOfferModal
-         onClose={() => setShowNewOfferModal(false)}
-         onOfferAdded={async () => {
-           router.refresh();
-         }}
-       />
+        <NewOfferModal
+          onClose={() => setShowNewOfferModal(false)}
+          onOfferAdded={async () => {
+            if (pathname === "/dashboard") {
+              router.refresh();
+            }
+          }}
+        />
       )}
     </div>
   );
