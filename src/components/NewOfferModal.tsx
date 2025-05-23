@@ -1,6 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+// Komponent modalny do dodawania nowej oferty krok po kroku
+// Obsługuje różne kategorie (książki, notatki, korepetycje, inne)
+// Wysyła dane do API /api/offers jako FormData
+
+import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import {
   FaBook,
@@ -21,73 +25,54 @@ interface NewOfferMultiStepModalProps {
 
 export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOfferMultiStepModalProps) {
   const { data: session } = useSession();
-  const [step, setStep] = useState(1);
-  const [category, setCategory] = useState("INNE");
-  const [department, setDepartment] = useState("");
-  const [major, setMajor] = useState("");
-
-  // Pola wspólne
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [image, setImage] = useState<File | null>(null);
-
-  // Pola "książki" i "notatki"
+  const [step, setStep] = useState(1); // obecny krok formularza
+  const [category, setCategory] = useState("INNE"); // domyślna kategoria
+  const [department, setDepartment] = useState(""); // wybrany wydział
+  const [major, setMajor] = useState(""); // wybrany kierunek
+  const [title, setTitle] = useState(""); // tytuł oferty
+  const [description, setDescription] = useState(""); // opis oferty
+  const [image, setImage] = useState<File | null>(null); // zdjęcie oferty
   const [author, setAuthor] = useState("");
   const [publisher, setPublisher] = useState("");
   const [year, setYear] = useState("");
   const [condition, setCondition] = useState("");
   const [teacher, setTeacher] = useState("");
   const [scope, setScope] = useState<string[]>([]);
-
-  // Pola "korepetycje"
   const [subject, setSubject] = useState("");
   const [availability, setAvailability] = useState("");
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [timeOfDay, setTimeOfDay] = useState("");
-
-  // Krok 3
   const [price, setPrice] = useState("");
   const [location, setLocation] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
-
   const [error, setError] = useState("");
 
-  // Lista wydziałów i kierunków
   const uniqueDepartments = Array.from(new Set(majorsData.map((item) => item.wydzial)));
   const filteredMajors = majorsData
     .filter((item) => item.wydzial === department)
     .map((item) => item.kierunek);
 
-  // Generujemy lata do wyboru (ostatnie 30 lat)
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 100 }, (_, i) => (currentYear - i).toString());
 
-  // Dni tygodnia do wyboru
   const daysOfWeek = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"];
   const timesOfDay = ["Rano", "Popołudnie", "Wieczór", "Elastycznie"];
 
-  // Aktualizacja dostępności z wybranych dni i pór dnia
-  const updateAvailability = () => {
+  useEffect(() => {
     const days = selectedDays.length > 0 ? selectedDays.join(", ") : "";
-    const time = timeOfDay ? timeOfDay : "";
+    const time = timeOfDay || "";
     setAvailability(days && time ? `${days} - ${time}` : days || time);
-  };
+  }, [selectedDays, timeOfDay]);
 
-  // Obsługa wyboru dni tygodnia
   const handleDayToggle = (day: string) => {
-    setSelectedDays((prev) => {
-      const newDays = prev.includes(day)
-        ? prev.filter((d) => d !== day)
-        : [...prev, day];
-      
-      return newDays;
-    });
+    setSelectedDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
   };
 
-  // Dodawanie/Usuwanie tagów
   const handleAddTag = () => {
-    if (newTag.trim() !== "") {
+    if (newTag.trim()) {
       setTags((prev) => [...prev, newTag.trim()]);
       setNewTag("");
     }
@@ -97,23 +82,14 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
     setTags((prev) => prev.filter((tag) => tag !== tagToRemove));
   };
 
-  // Kontrola ceny (nie dopuszczamy ujemnej)
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Math.max(0, parseFloat(e.target.value) || 0);
     setPrice(value.toString());
   };
 
-  // Efekt dla aktualizacji availibility po zmianie dni lub pory dnia
-  React.useEffect(() => {
-    updateAvailability();
-  }, [selectedDays, timeOfDay]);
-
-  // Wysyłanie danych
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
-    // Upewniamy się, że użytkownik jest zalogowany
     const userId = (session?.user as { id?: string })?.id;
     if (!userId) {
       setError("Musisz być zalogowany, aby dodać ofertę");
@@ -121,31 +97,15 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
     }
 
     try {
-      // 1) Składamy obiekt z danymi do zapisania w `description`
       const extraData: Record<string, any> = {
-        baseDescription: description, // główny opis
-        location,                     // miejsce odbioru/odbywania
+        baseDescription: description,
+        location,
       };
+      if (category === "KSIAZKI") extraData.ksiazki = { author, publisher, year, condition };
+      if (category === "NOTATKI") extraData.notatki = { teacher, scope };
+      if (category === "KOREPETYCJE") extraData.korepetycje = { subject, availability };
 
-      if (category === "KSIAZKI") {
-        extraData.ksiazki = { author, publisher, year, condition };
-      }
-
-      if (category === "NOTATKI") {
-        extraData.notatki = { teacher, scope };
-      }
-
-      if (category === "KOREPETYCJE") {
-        extraData.korepetycje = {
-          subject,
-          availability,
-        };
-      }
-
-      // Konwertujemy do JSON:
       const finalDescriptionString = JSON.stringify(extraData);
-
-      // 2) Budujemy formData do wysłania
       const formData = new FormData();
       formData.append("title", title);
       formData.append("description", finalDescriptionString);
@@ -156,34 +116,23 @@ export default function NewOfferMultiStepModal({ onClose, onOfferAdded }: NewOff
       formData.append("category", category);
       formData.append("location", location);
       formData.append("userId", userId);
+      if (image) formData.append("image", image);
 
-      if (image) {
-        formData.append("image", image);
-      }
-
-      // 3) Wysłanie do /api/offers
       const res = await fetch("/api/offers", {
         method: "POST",
         body: formData,
       });
 
-      if (!res.ok) {
-        throw new Error("Nie udało się dodać oferty");
-      }
+      if (!res.ok) throw new Error("Nie udało się dodać oferty");
 
       alert("Oferta dodana!");
-
-      if (typeof onOfferAdded === "function") {
-        await onOfferAdded();
-      }
-      
+      await onOfferAdded();
       onClose();
-      
     } catch (err) {
       setError(err instanceof Error ? err.message : "Wystąpił nieznany błąd");
     }
   };
-
+  
   // Lista opcji miejsca
   const pickupOptions =
     category === "KOREPETYCJE"

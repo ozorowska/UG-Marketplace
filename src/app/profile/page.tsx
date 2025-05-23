@@ -8,6 +8,7 @@ import { FaUser, FaPen, FaTrash, FaSignOutAlt, FaKey } from "react-icons/fa";
 import SidebarLayout from "../../components/SidebarLayout";
 import TopNavbar from "../../components/TopNavbar";
 
+// typy danych dla użytkownika i sesji
 interface CustomUser {
   name: string | null;
   email: string;
@@ -19,7 +20,7 @@ interface CustomSession {
   user: CustomUser;
 }
 
-// Typ danych kierunku – zakładamy, że plik JSON ma pole "kierunek"
+// typ danych kierunku – zakładamy, że plik JSON ma pole "kierunek"
 interface UgMajor {
   kierunek: string;
 }
@@ -28,7 +29,7 @@ export default function ProfilePage() {
   const { data: session, status, update } = useSession();
   const router = useRouter();
 
-  // Stany profilu
+  // stany dla danych profilu użytkownika
   const [name, setName] = useState("");
   const [major, setMajor] = useState("");
   const [ugMajors, setUgMajors] = useState<string[]>([]);
@@ -36,7 +37,7 @@ export default function ProfilePage() {
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
 
-  // Pozostałe stany (dla zmiany hasła, komunikatów, ładowania, itd.)
+  // stany dla zmiany hasła i komunikatów
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -48,7 +49,7 @@ export default function ProfilePage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Pobieranie danych profilu i ustawianie imienia, kierunku oraz zdjęcia
+  // pobieranie danych użytkownika przy ładowaniu strony
   useEffect(() => {
     if (status === "loading") return;
     if (!session) {
@@ -61,6 +62,7 @@ export default function ProfilePage() {
       setMajor(user.major);
     }
 
+    // pobieranie dodatkowych danych profilu z api
     fetch("/api/user/profile")
       .then((res) => res.json())
       .then((data) => {
@@ -70,7 +72,7 @@ export default function ProfilePage() {
       .catch(console.error);
   }, [session, status, router]);
 
-  // Pobieranie listy kierunków z pliku JSON (bez filtrowania po wydziale)
+  // pobieranie listy kierunków z pliku json
   useEffect(() => {
     fetch("/ug_majors.json")
       .then((res) => res.json())
@@ -81,7 +83,7 @@ export default function ProfilePage() {
       .catch(console.error);
   }, []);
 
-  // Aktualizacja imienia
+  // funkcja do aktualizacji imienia użytkownika
   const handleNameChange = async () => {
     setIsLoading(true);
     setError("");
@@ -97,21 +99,19 @@ export default function ProfilePage() {
         throw new Error((await res.json()).error || "Error updating name");
       }
       
-      // Update the session
+      // aktualizacja sesji z nowym imieniem
       await update({
         ...session,
         user: { ...(session as CustomSession).user, name },
       });
       
-      // Force a UI refresh by updating the local state and session data
+      // odświeżenie ui po udanej zmianie
       const customSession = session as CustomSession;
       customSession.user.name = name;
       
-      // Set success message and exit edit mode
       setSuccess("Name updated successfully!");
       setIsEditingName(false);
       
-      // Force a router refresh
       router.refresh();
     } catch (e: any) {
       setError(e.message);
@@ -120,51 +120,51 @@ export default function ProfilePage() {
     }
   };
 
-  // Aktualizacja kierunku
- // Aktualizacja kierunku
-const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-  const selected = e.target.value;
-  setMajor(selected);
-  if (!selected) return;
-  setIsLoading(true);
-  setError("");
-  setSuccess("");
-  try {
-    const res = await fetch("/api/user/profile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ major: selected }),
-    });
-    if (!res.ok) {
-      throw new Error((await res.json()).error || "Error updating major");
+  // funkcja do aktualizacji kierunku studiów
+  const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selected = e.target.value;
+    setMajor(selected);
+    if (!selected) return;
+    setIsLoading(true);
+    setError("");
+    setSuccess("");
+    try {
+      const res = await fetch("/api/user/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ major: selected }),
+      });
+      if (!res.ok) {
+        throw new Error((await res.json()).error || "Error updating major");
+      }
+      // aktualizacja sesji z nowym kierunkiem
+      await update({
+        ...session,
+        user: { ...(session as CustomSession).user, major: selected },
+      });
+      setSuccess("Major updated successfully!");
+      router.refresh();
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setIsLoading(false);
     }
-    await update({
-      ...session,
-      user: { ...(session as CustomSession).user, major: selected },
-    });
-    setSuccess("Major updated successfully!");
-    // Odświeżenie strony (wywołanie router.refresh())
-    router.refresh();
-    setTimeout(() => setSuccess(""), 3000);
-  } catch (e: any) {
-    setError(e.message);
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
-
-  // Obsługa zmiany zdjęcia profilowego
+  // obsługa wyboru pliku zdjęcia profilowego
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setProfileImage(file);
+      // tworzenie podglądu zdjęcia
       const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
 
+  // funkcja do przesyłania zdjęcia profilowego
   const uploadProfileImage = async () => {
     if (!profileImage) return;
     setIsLoading(true);
@@ -181,6 +181,7 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
         throw new Error((await res.json()).error || "Error uploading image");
       }
       const data = await res.json();
+      // aktualizacja sesji z nowym url zdjęcia
       await update({
         ...session,
         user: { ...(session as CustomSession).user, image: data.imageUrl },
@@ -193,7 +194,7 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     }
   };
 
-  // Zmiana hasła
+  // funkcja do zmiany hasła
   const changePassword = async () => {
     if (newPassword !== confirmPassword) {
       setError("Passwords do not match");
@@ -212,6 +213,7 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
         throw new Error((await res.json()).error || "Error changing password");
       }
       setSuccess("Password changed successfully!");
+      // czyszczenie pól hasła po udanej zmianie
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -223,7 +225,7 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     }
   };
 
-  // Usuwanie konta
+  // funkcja do usuwania konta użytkownika
   const deleteAccount = async () => {
     setIsLoading(true);
     setError("");
@@ -232,6 +234,7 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
       if (!res.ok) {
         throw new Error((await res.json()).error || "Error deleting account");
       }
+      // wylogowanie i przekierowanie po usunięciu konta
       await signOut({ redirect: false });
       router.push("/login?deleted=true");
     } catch (e: any) {
@@ -240,12 +243,13 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     }
   };
 
-  // Wylogowanie
+  // funkcja do wylogowania użytkownika
   const handleLogout = async () => {
     await signOut({ redirect: false });
     router.push("/login");
   };
 
+  // wyświetlanie loadera podczas ładowania sesji
   if (status === "loading") {
     return (
       <>
@@ -267,6 +271,7 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
       <SidebarLayout>
         <div className="max-w-4xl mx-auto p-6">
           <h1 className="text-3xl font-bold mb-8">Profil</h1>
+          {/* wyświetlanie komunikatów błędu i sukcesu */}
           {error && (
             <div className="bg-red-50 text-red-700 p-4 rounded mb-6">
               {error}
@@ -277,8 +282,9 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
               {success}
             </div>
           )}
-          {/* Profile Image & Details */}
+          {/* sekcja zdjęcia profilowego i podstawowych danych */}
           <div className="bg-white rounded shadow p-6 flex flex-col md:flex-row mb-8">
+            {/* kolumna ze zdjęciem profilowym */}
             <div className="md:w-1/3 flex flex-col items-center border-b md:border-b-0 md:border-r p-4">
               <div className="w-48 h-48 rounded-full overflow-hidden bg-gray-200 mb-4">
                 {imagePreview ? (
@@ -293,6 +299,7 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
                   </div>
                 )}
               </div>
+              {/* ukryty input do wyboru pliku */}
               <input
                 type="file"
                 ref={fileInputRef}
@@ -301,6 +308,7 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
                 className="hidden"
               />
               <div className="flex gap-2">
+                {/* przycisk do wyboru zdjęcia */}
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="px-4 py-2 bg-blue-600 text-white rounded"
@@ -308,6 +316,7 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
                 >
                   Wybierz obraz
                 </button>
+                {/* przycisk do przesłania zdjęcia (pokazuje się po wybraniu) */}
                 {profileImage && (
                   <button
                     onClick={uploadProfileImage}
@@ -319,7 +328,9 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
                 )}
               </div>
             </div>
+            {/* kolumna z danymi użytkownika */}
             <div className="md:w-2/3 p-4">
+              {/* pole email (tylko do odczytu) */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-600 mb-2">
                   Email
@@ -328,46 +339,50 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
                   {(session as CustomSession).user.email}
                 </div>
               </div>
+              {/* pole imienia z możliwością edycji */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-600 mb-2">
                   Imię
                 </label>
                 {!isEditingName ? (
-  <div className="flex justify-between items-center p-3 bg-gray-50 rounded border">
-    <span>{name || "Not set"}</span>
-    <button onClick={() => setIsEditingName(true)} className="text-blue-600">
-      <FaPen size={16} />
-    </button>
-  </div>
-) : (
-  <div className="flex gap-2">
-    <input
-      type="text"
-      value={name}
-      onChange={(e) => setName(e.target.value)}
-      className="flex-1 p-3 border rounded"
-      placeholder="Your name"
-    />
-    <button
-      onClick={handleNameChange}
-      className="px-4 py-2 bg-green-600 text-white rounded"
-      disabled={isLoading}
-    >
-      Zapisz
-    </button>
-    <button
-      onClick={() => {
-        setIsEditingName(false);
-        setName((session as CustomSession).user.name || "");
-      }}
-      className="px-4 py-2 bg-gray-500 text-white rounded"
-      disabled={isLoading}
-    >
-      Zamknij
-    </button>
-  </div>
-)}
+                  // tryb wyświetlania imienia
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded border">
+                    <span>{name || "Not set"}</span>
+                    <button onClick={() => setIsEditingName(true)} className="text-blue-600">
+                      <FaPen size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  // tryb edycji imienia
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="flex-1 p-3 border rounded"
+                      placeholder="Your name"
+                    />
+                    <button
+                      onClick={handleNameChange}
+                      className="px-4 py-2 bg-green-600 text-white rounded"
+                      disabled={isLoading}
+                    >
+                      Zapisz
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsEditingName(false);
+                        setName((session as CustomSession).user.name || "");
+                      }}
+                      className="px-4 py-2 bg-gray-500 text-white rounded"
+                      disabled={isLoading}
+                    >
+                      Zamknij
+                    </button>
+                  </div>
+                )}
               </div>
+              {/* dropdown do wyboru kierunku studiów */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-600 mb-2">
                   Major
@@ -389,13 +404,13 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
             </div>
           </div>
 
-
-          {/* Account Actions */}
+          {/* sekcja zarządzania kontem */}
           <div className="bg-white rounded shadow p-6 mb-8">
             <h2 className="text-xl mb-4">Moje konto</h2>
             <div className="flex flex-col gap-4">
-              {/* Zmień hasło */}
+              {/* sekcja zmiany hasła */}
               {isChangingPassword ? (
+                // formularz zmiany hasła
                 <div className="space-y-4">
                   <input
                     type="password"
@@ -441,6 +456,7 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
                   </div>
                 </div>
               ) : (
+                // przycisk do rozpoczęcia zmiany hasła
                 <button
                   onClick={() => setIsChangingPassword(true)}
                   className="px-6 py-3 bg-gray-200 text-gray-800 rounded flex items-center gap-2"
@@ -450,7 +466,7 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
                 </button>
               )}
 
-              {/* Wyloguj */}
+              {/* przycisk wylogowania */}
               <button
                 onClick={handleLogout}
                 className="px-6 py-3 bg-gray-200 text-gray-800 rounded flex items-center gap-2"
@@ -459,8 +475,9 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
                 <FaSignOutAlt size={16} /> Wyloguj
               </button>
 
-              {/* Usuń konto */}
+              {/* sekcja usuwania konta */}
               {isDeleting ? (
+                // potwierdzenie usunięcia konta
                 <div className="flex flex-col gap-2">
                   <div className="text-red-700 font-bold">
                     Czy jesteś pewien? Wszystkie Twoje ogłoszenia i wiadomości zostaną trwale usunięte!
@@ -483,6 +500,7 @@ const handleMajorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
                   </div>
                 </div>
               ) : (
+                // przycisk do rozpoczęcia procesu usuwania konta
                 <button
                   onClick={() => setIsDeleting(true)}
                   className="px-6 py-3 bg-red-100 text-red-700 rounded flex items-center gap-2"

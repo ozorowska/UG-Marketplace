@@ -1,11 +1,15 @@
-"use client";
+"use client"; 
 
 import React, { useState, useEffect } from "react";
-import majorsData from "../../../../public/ug_majors.json";
+import majorsData from "../../../public/ug_majors.json";
 
-// Typy
+// typy do oferty i tagu
 
+// pojedynczy tag (np. "Python")
 type Tag = { id: string; name: string };
+
+// typ reprezentujący ofertę
+// pola opcjonalne, ponieważ mogą nie wystąpić (np. brak obrazka)
 type Offer = {
   id: string;
   category?: string;
@@ -17,21 +21,23 @@ type Offer = {
   description: string;
 };
 
+// propsy dla komponentu edycji oferty
 interface EditOfferModalProps {
-  offer: Offer | null;
-  onClose: () => void;
-  onSuccess?: () => void;
+  offer: Offer | null; // oferta do edycji
+  onClose: () => void; // zamknięcie modala
+  onSuccess?: () => void; // callback po sukcesie
 }
 
 export default function EditOfferModal({ offer, onClose, onSuccess }: EditOfferModalProps) {
   const [error, setError] = useState("");
-  const [category, setCategory] = useState("INNE");
+  const [category, setCategory] = useState("INNE"); // domyślna kategoria
   const [major, setMajor] = useState("");
   const [price, setPrice] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
   const [image, setImage] = useState<File | null>(null);
 
+  // stany zależne od kategorii
   const [bookTitle, setBookTitle] = useState("");
   const [bookAuthor, setBookAuthor] = useState("");
   const [bookPublisher, setBookPublisher] = useState("");
@@ -48,6 +54,7 @@ export default function EditOfferModal({ offer, onClose, onSuccess }: EditOfferM
   const [otherTitle, setOtherTitle] = useState("");
   const [otherDescription, setOtherDescription] = useState("");
 
+  // wypełnienie danych przy załadowaniu oferty
   useEffect(() => {
     if (!offer) return;
 
@@ -55,10 +62,10 @@ export default function EditOfferModal({ offer, onClose, onSuccess }: EditOfferM
     setMajor(offer.major ?? "");
     setPrice(String(offer.price ?? ""));
     if (offer.tags) setTags(offer.tags.map((tag) => tag.name));
-    setImage(null);
+    setImage(null); // reset zdjęcia lokalnego
 
     try {
-      const parsed = JSON.parse(offer.description);
+      const parsed = JSON.parse(offer.description); // rozbicie JSONa z opisem
       if (offer.category === "KSIAZKI") {
         setBookTitle(offer.title || "");
         setBookAuthor(parsed.ksiazki?.author || "");
@@ -77,11 +84,13 @@ export default function EditOfferModal({ offer, onClose, onSuccess }: EditOfferM
         setOtherDescription(parsed.baseDescription || "");
       }
     } catch {
+      // fallback gdy opis nie jest JSONem
       setOtherTitle(offer.title || "");
       setOtherDescription(offer.description || "");
     }
   }, [offer]);
 
+  // dodanie tagu po kliknięciu "Dodaj"
   const handleAddTag = () => {
     const trimmed = newTag.trim();
     if (trimmed !== "" && !tags.includes(trimmed)) {
@@ -90,12 +99,15 @@ export default function EditOfferModal({ offer, onClose, onSuccess }: EditOfferM
     }
   };
 
+  // usuwanie tagu
   const handleRemoveTag = (tagToRemove: string) => {
     setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
+  // unikalna lista kierunków
   const allMajors = Array.from(new Set(majorsData.map((item) => item.kierunek)));
 
+  // zapis oferty po kliknięciu "Zapisz zmiany"
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -148,6 +160,7 @@ export default function EditOfferModal({ offer, onClose, onSuccess }: EditOfferM
       formData.append("title", finalTitle);
       formData.append("description", finalDescription);
       formData.append("tags", tags.join(","));
+
       if (image) {
         formData.append("image", image);
       } else if (offer.imageUrl) {
@@ -172,7 +185,8 @@ export default function EditOfferModal({ offer, onClose, onSuccess }: EditOfferM
     }
   }
 
-  return (
+  // komponent JSX- zwraca modal
+   return (
     <>
       <div className="fixed inset-0 bg-black bg-opacity-50 z-50" onClick={onClose}></div>
       <div className="fixed inset-0 z-50 flex items-center justify-center px-2">

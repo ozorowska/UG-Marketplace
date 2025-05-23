@@ -3,11 +3,12 @@
 import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import SidebarLayout from "../../../components/SidebarLayout";
-import TopNavbar from "../../../components/TopNavbar";
+import SidebarLayout from "../../components/SidebarLayout";
+import TopNavbar from "../../components/TopNavbar";
 import EditOfferModal from "./EditOfferModal";
 import { FaEdit, FaTrash, FaRegCalendarAlt } from "react-icons/fa";
 
+// typ oferty z wymaganymi polami
 interface Offer {
   id: string;
   title: string;
@@ -23,12 +24,15 @@ interface Offer {
 }
 
 export default function MyOffersPage() {
+  // dane sesji użytkownika
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [myOffers, setMyOffers] = useState<Offer[]>([]);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [offerToEdit, setOfferToEdit] = useState<Offer | null>(null);
 
+  const [myOffers, setMyOffers] = useState<Offer[]>([]); // oferty użytkownika
+  const [showEditModal, setShowEditModal] = useState(false); // widoczność modala
+  const [offerToEdit, setOfferToEdit] = useState<Offer | null>(null); // oferta do edycji
+
+  // pobranie ofert zalogowanego użytkownika
   async function fetchMyOffers() {
     if (!session || !session.user) return;
     const userId = (session.user as { id: string }).id;
@@ -44,6 +48,7 @@ export default function MyOffersPage() {
     }
   }
 
+  // usuwanie oferty po potwierdzeniu
   async function handleDeleteOffer(offerId: string) {
     if (!window.confirm("Na pewno chcesz usunąć tę ofertę?")) return;
     try {
@@ -51,22 +56,25 @@ export default function MyOffersPage() {
       if (!res.ok) {
         throw new Error("Nie udało się usunąć oferty");
       }
-      fetchMyOffers();
+      fetchMyOffers(); // odśwież listę
     } catch (error) {
       console.error("Błąd przy usuwaniu oferty:", error);
       alert("Wystąpił błąd przy usuwaniu oferty");
     }
   }
 
+  // kliknięcie przycisku edycji
   function handleEditClick(offer: Offer) {
     setOfferToEdit(offer);
     setShowEditModal(true);
   }
 
+  // po udanej edycji odśwież dane
   function handleEditSuccess() {
     fetchMyOffers();
   }
 
+  // przekierowanie do logowania, jeśli brak sesji
   useEffect(() => {
     if (status === "loading") return;
     if (!session) {
@@ -76,7 +84,7 @@ export default function MyOffersPage() {
     fetchMyOffers();
   }, [session, status, router]);
 
-  if (!session) return null;
+  if (!session) return null; // fallback na brak sesji
 
   return (
     <>
@@ -88,7 +96,11 @@ export default function MyOffersPage() {
         ) : (
           <div className="space-y-4">
             {myOffers.map((offer) => (
-              <div key={offer.id} className="bg-white p-4 rounded shadow flex items-center gap-4 cursor-pointer">
+              <div
+                key={offer.id}
+                className="bg-white p-4 rounded shadow flex items-center gap-4 cursor-pointer"
+              >
+                {/* miniatura oferty */}
                 <div className="w-20 h-20 flex-shrink-0 bg-gray-50 rounded overflow-hidden flex items-center justify-center">
                   {offer.imageUrl ? (
                     <img
@@ -101,6 +113,8 @@ export default function MyOffersPage() {
                     <div className="text-gray-400 text-sm">Brak obrazu</div>
                   )}
                 </div>
+
+                {/* szczegóły oferty */}
                 <div className="flex-grow">
                   <h3 className="text-lg font-medium text-gray-900">{offer.title}</h3>
                   <div className="flex items-center gap-1 text-sm text-gray-500">
@@ -111,6 +125,8 @@ export default function MyOffersPage() {
                     {offer.price === 0 ? "Za darmo" : `${offer.price} zł`}
                   </p>
                 </div>
+
+                {/* przyciski edycji i usuwania */}
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleEditClick(offer)}
@@ -132,6 +148,8 @@ export default function MyOffersPage() {
           </div>
         )}
       </SidebarLayout>
+
+      {/* modal edycji */}
       {showEditModal && offerToEdit && (
         <EditOfferModal
           offer={offerToEdit}

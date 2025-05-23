@@ -1,26 +1,27 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth";
+import { prisma } from "@/lib/prisma"; // korzystamy z globalnej instancji Prisma
 
 export const runtime = "nodejs";
-// (opcjonalnie: export const dynamic = "force-dynamic"; 
-//  jeśli zdarzy się błąd 'res.getHeader is not a function')
 
-const prisma = new PrismaClient();
+// typowanie danych wejściowych
+type OfferIdPayload = {
+  offerId: string;
+};
 
 // GET /api/favorites
-// Zwraca listę ulubionych ofert zalogowanego użytkownika
-export async function GET(request) {
+// zwraca listę ulubionych ofert zalogowanego użytkownika
+export async function GET() {
   try {
-    // Odczytujemy sesję z NextAuth
+    // pobranie sesji użytkownika
     const session = await getServerSession();
 
-    // Sprawdzamy, czy user jest zalogowany (patrzymy na email)
-    if (!session || !session.user || !session.user.email) {
+    // sprawdzenie autoryzacji
+    if (!session?.user?.email) {
       return NextResponse.json({ error: "Nieautoryzowany" }, { status: 401 });
     }
 
-    // Znajdujemy w bazie usera po mailu
+    // pobranie użytkownika z bazy wraz z ulubionymi ofertami
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: {
@@ -30,14 +31,12 @@ export async function GET(request) {
       },
     });
 
+    // jeśli użytkownik nie istnieje
     if (!user) {
-      return NextResponse.json(
-        { error: "Nie znaleziono użytkownika" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Nie znaleziono użytkownika" }, { status: 404 });
     }
 
-    // Zwracamy listę ulubionych ofert
+    // zwrócenie listy ulubionych
     return NextResponse.json(user.favorites, { status: 200 });
   } catch (error) {
     console.error("Błąd w GET /api/favorites:", error);
@@ -46,46 +45,42 @@ export async function GET(request) {
 }
 
 // POST /api/favorites
-// Dodaje ofertę do ulubionych zalogowanego użytkownika
-export async function POST(request) {
+// dodaje ofertę do ulubionych
+export async function POST(request: Request) {
   try {
     const session = await getServerSession();
 
-    if (!session || !session.user || !session.user.email) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: "Nieautoryzowany" }, { status: 401 });
     }
 
-    // Odczytujemy JSON z requestu
-    const { offerId } = await request.json();
+    // odczytanie offerId z ciała żądania
+    const { offerId }: OfferIdPayload = await request.json();
 
     if (!offerId) {
-      return NextResponse.json(
-        { error: "Brak offerId w body żądania" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Brak offerId w body żądania" }, { status: 400 });
     }
 
-    // Znajdujemy usera po mailu
+    // pobranie użytkownika
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       select: { id: true },
     });
+
     if (!user) {
-      return NextResponse.json(
-        { error: "Nie znaleziono użytkownika w bazie" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Nie znaleziono użytkownika w bazie" }, { status: 404 });
     }
 
-    // Znajdujemy ofertę
+    // sprawdzenie czy oferta istnieje
     const existingOffer = await prisma.offer.findUnique({
       where: { id: offerId },
     });
+
     if (!existingOffer) {
       return NextResponse.json({ error: "Nie ma takiej oferty" }, { status: 404 });
     }
 
-    // Dodajemy do ulubionych (relacja many-to-many)
+    // dodanie oferty do ulubionych
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -103,37 +98,33 @@ export async function POST(request) {
 }
 
 // DELETE /api/favorites
-// Usuwa ofertę z ulubionych zalogowanego użytkownika
-export async function DELETE(request) {
+// usuwa ofertę z ulubionych
+export async function DELETE(request: Request) {
   try {
     const session = await getServerSession();
 
-    if (!session || !session.user || !session.user.email) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: "Nieautoryzowany" }, { status: 401 });
     }
 
-    const { offerId } = await request.json();
+    // odczytanie offerId z ciała żądania
+    const { offerId }: OfferIdPayload = await request.json();
 
     if (!offerId) {
-      return NextResponse.json(
-        { error: "Brak offerId w body żądania" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Brak offerId w body żądania" }, { status: 400 });
     }
 
-    // Znajdujemy usera
+    // pobranie użytkownika
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       select: { id: true },
     });
+
     if (!user) {
-      return NextResponse.json(
-        { error: "Nie znaleziono użytkownika w bazie" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Nie znaleziono użytkownika w bazie" }, { status: 404 });
     }
 
-    // Usuwamy z ulubionych (disconnect)
+    // usunięcie z ulubionych
     await prisma.user.update({
       where: { id: user.id },
       data: {

@@ -1,23 +1,21 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-// Komponenty
 import SidebarLayout from "../../components/SidebarLayout";
 import TopNavbar from "../../components/TopNavbar";
 import FloatingButton from "../../components/FloatingButton";
 import OfferDetailModal from "../../components/OfferDetailModal";
 import NewOfferModal from "../../components/NewOfferModal";
 
-// Ikony
 import { FaHeart, FaFilter, FaMapMarkerAlt, FaBook } from "react-icons/fa";
 import { IoClose, IoOptions } from "react-icons/io5";
 import { GiTeacher } from "react-icons/gi";
 import { BsJournalBookmark } from "react-icons/bs";
 
-// Typ oferty
+// typ oferty
 interface Offer {
   id: string;
   title: string;
@@ -33,36 +31,34 @@ interface Offer {
 }
 
 export default function DashboardPage() {
-  const { data: session, status } = useSession();
+  const { data: session, status } = useSession(); // pobieranie sesji uzytkownika
   const router = useRouter();
   const searchParams = useSearchParams();
-  const query = searchParams.get("q") || "";
+  const query = searchParams.get("q") || ""; // pobieranie parametru wyszukiwania
 
-  const [offers, setOffers] = useState<Offer[]>([]);
-  const [filteredOffers, setFilteredOffers] = useState<Offer[]>([]);
-  const [sortOption, setSortOption] = useState<string>("Najnowsze");
-  const [favoriteOffers, setFavoriteOffers] = useState<string[]>([]);
-  const [showNewOfferModal, setShowNewOfferModal] = useState(false);
-  const [selectedOfferId, setSelectedOfferId] = useState<string | null>(null);
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [activeMajor, setActiveMajor] = useState<string | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
+  const [offers, setOffers] = useState<Offer[]>([]); // wszystkie oferty
+  const [favoriteOffers, setFavoriteOffers] = useState<string[]>([]); // lista ulubionych ofert
+  const [sortOption, setSortOption] = useState("Najnowsze"); // opcja sortowania
+  const [showNewOfferModal, setShowNewOfferModal] = useState(false); // stan modala nowej oferty
+  const [selectedOfferId, setSelectedOfferId] = useState<string | null>(null); // wybrana oferta do podglądu
+  const [activeCategory, setActiveCategory] = useState<string | null>(null); // aktywna kategoria filtrowania
+  const [activeMajor, setActiveMajor] = useState<string | null>(null); // aktywny kierunek filtrowania
+  const [showFilters, setShowFilters] = useState(false); // czy widoczne są filtry
 
+  // przekierowanie na /login jeśli użytkownik nie jest zalogowany
   useEffect(() => {
     if (status === "loading") return;
     if (!session) router.push("/login");
   }, [session, status, router]);
 
-  const refreshOffers = async () => {
+  // pobieranie ofert z API (wyszukiwanie lub wszystkie)
+  const refreshOffers = useCallback(async () => {
     try {
-      const endpoint =
-        query.trim() !== ""
-          ? `/api/search?q=${encodeURIComponent(query)}`
-          : "/api/offers";
+      const endpoint = query.trim() !== "" ? `/api/search?q=${encodeURIComponent(query)}` : "/api/offers";
       const res = await fetch(endpoint);
       if (!res.ok) throw new Error("Failed to fetch offers");
       const data = await res.json();
-      
+
       const offersWithLocation = data.map((offer: any) => {
         try {
           const parsedDesc = JSON.parse(offer.description);
@@ -79,16 +75,16 @@ export default function DashboardPage() {
       });
 
       setOffers(offersWithLocation);
-      setFilteredOffers(offersWithLocation);
     } catch (error) {
       console.error("Error fetching offers:", error);
     }
-  };
+  }, [query]);
 
   useEffect(() => {
     refreshOffers();
-  }, [query]);
+  }, [refreshOffers]);
 
+  // pobieranie ulubionych ofert użytkownika
   useEffect(() => {
     async function fetchFavorites() {
       try {
@@ -104,30 +100,33 @@ export default function DashboardPage() {
     if (session) fetchFavorites();
   }, [session]);
 
-  const uniqueMajors = Array.from(new Set(offers.map((offer) => offer.major))).filter(Boolean);
+  // unikalne kierunki z listy ofert (dla filtrów)
+  const uniqueMajors = useMemo(() => {
+    return Array.from(new Set(offers.map((offer) => offer.major))).filter(Boolean);
+  }, [offers]);
 
-  useEffect(() => {
+  // sortowanie i filtrowanie ofert
+  const filteredOffers = useMemo(() => {
     let sorted = [...offers];
-    switch (sortOption) {
-      case "Ceny rosnąco":
-        sorted.sort((a, b) => a.price - b.price);
-        break;
-      case "Ceny malejąco":
-        sorted.sort((a, b) => b.price - a.price);
-        break;
-      case "Najnowsze":
-        sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        break;
-    }
+
+    const sorters: Record<string, (a: Offer, b: Offer) => number> = {
+      "Ceny rosnąco": (a, b) => a.price - b.price,
+      "Ceny malejąco": (a, b) => b.price - a.price,
+      "Najnowsze": (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    };
+
+    sorted.sort(sorters[sortOption] || sorters["Najnowsze"]);
+
     if (activeCategory) {
       sorted = sorted.filter((offer) => offer.category === activeCategory);
     }
     if (activeMajor) {
       sorted = sorted.filter((offer) => offer.major === activeMajor);
     }
-    setFilteredOffers(sorted);
-  }, [offers, sortOption, activeCategory, activeMajor, favoriteOffers]);
+    return sorted;
+  }, [offers, sortOption, activeCategory, activeMajor]);
 
+  // zmiana statusu ulubionej oferty
   const toggleFavorite = async (offerId: string) => {
     try {
       const isFavorite = favoriteOffers.includes(offerId);
@@ -135,7 +134,7 @@ export default function DashboardPage() {
       const res = await fetch("/api/favorites", {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ offerId }),
+        body: JSON.stringify({ offerId })
       });
       if (!res.ok) throw new Error(`Failed to ${isFavorite ? "remove" : "add"} favorite`);
       setFavoriteOffers((prev) =>
@@ -146,18 +145,21 @@ export default function DashboardPage() {
     }
   };
 
+  // dane kategorii z ikonami
   const categories = [
     { value: "KSIAZKI", label: "Książki", icon: <FaBook className="mr-2" /> },
     { value: "NOTATKI", label: "Notatki", icon: <BsJournalBookmark className="mr-2" /> },
     { value: "KOREPETYCJE", label: "Korepetycje", icon: <GiTeacher className="mr-2" /> },
-    { value: "INNE", label: "Inne", icon: <IoOptions className="mr-2" /> },
+    { value: "INNE", label: "Inne", icon: <IoOptions className="mr-2" /> }
   ];
 
+  // zwraca ikonę kategorii
   const getCategoryIcon = (category: string) => {
     const found = categories.find((c) => c.value === category);
     return found ? found.icon : <IoOptions className="mr-2" />;
   };
 
+  // jeśli użytkownik nie zalogowany, nie renderuj komponentu
   if (!session) return null;
 
   return (
@@ -412,18 +414,14 @@ export default function DashboardPage() {
       )}
       {selectedOfferId && (
         <OfferDetailModal
-        offerId={selectedOfferId}
-        onClose={() => setSelectedOfferId(null)}
-        onFavoriteToggle={(id, isFav) => {
-          if (isFav) {
-            setFavoriteOffers([...favoriteOffers, id]);
-          } else {
-            setFavoriteOffers(favoriteOffers.filter((favId) => favId !== id));
-          }
-        }}
-      />
-      
+          offerId={selectedOfferId}
+          onClose={() => setSelectedOfferId(null)}
+          onFavoriteToggle={(id, isFav) => {
+            setFavoriteOffers((prev) => isFav ? [...prev, id] : prev.filter((favId) => favId !== id));
+          }}
+        />
       )}
     </>
   );
 }
+

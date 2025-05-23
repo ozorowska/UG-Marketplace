@@ -1,43 +1,47 @@
-// src/middleware.ts
 import { withAuth } from "next-auth/middleware"
 import { NextResponse } from "next/server"
 
+// middleware z autoryzacją next-auth
 export default withAuth(
   function middleware(req) {
-    const token = req.nextauth.token
-    const url = req.nextUrl
+    const token = req.nextauth.token // token JWT z sesji next-auth
+    const url = req.nextUrl // aktualny adres URL
 
-    console.log("Middleware running")
-    console.log("Token:", token)
-    console.log("Pathname:", url.pathname)
-
-    // ZALOGOWANI użytkownicy → przekierowanie na /dashboard z /login, /register
+    // jeśli użytkownik jest zalogowany i próbuje wejść na /login lub /register → przekieruj na /dashboard
     if (token && (url.pathname.startsWith("/login") || url.pathname.startsWith("/register"))) {
-      console.log("Authenticated user accessing public route:", url.pathname)
       return NextResponse.redirect(new URL("/dashboard", req.url))
     }
 
-    // NIEZALOGOWANI użytkownicy → przekierowanie na /login z /dashboard
-    if (!token && url.pathname.startsWith("/dashboard")) {
-      console.log("Unauthenticated user accessing protected route:", url.pathname)
+    // jeśli użytkownik nie jest zalogowany i próbuje wejść na chronione ścieżki → przekieruj na /login
+    if (!token && (
+      url.pathname.startsWith("/dashboard") ||
+      url.pathname.startsWith("/myoffers") ||
+      url.pathname.startsWith("/favorites") ||
+      url.pathname.startsWith("/messages") ||
+      url.pathname.startsWith("/profile")
+    )) {
       return NextResponse.redirect(new URL("/login", req.url))
     }
 
-    // Inne przypadki → przepuszczamy dalej
+    // w innych przypadkach przepuść dalej
     return NextResponse.next()
   },
   {
     pages: {
-      signIn: "/login",
+      signIn: "/login", // domyślna strona logowania używana przez next-auth
     },
   }
 )
 
+// konfiguracja matcherów – ścieżki, które będą obsługiwane przez middleware
 export const config = {
   matcher: [
     "/login",
-    // "/register",
-    // "/",
+    "/register",
     "/dashboard/:path*",
+    "/myoffers/:path*",
+    "/favorites/:path*",
+    "/messages/:path*",
+    "/profile/:path*",
   ],
 }

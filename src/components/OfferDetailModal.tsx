@@ -1,16 +1,19 @@
 "use client";
 
+// komponent modala szczegółów oferty
 import React, { useEffect, useState } from "react";
 import { FaArrowLeft, FaHeart, FaEnvelope, FaMapMarkerAlt, FaTimes } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
+// definicja typów propsów
 interface OfferDetailModalProps {
   offerId: string;
   onClose: () => void;
   onFavoriteToggle?: (offerId: string, isNowFavorite: boolean) => void;
 }
 
+// typ oferty
 type Offer = {
   id: string;
   title: string;
@@ -37,7 +40,7 @@ export default function OfferDetailModal({ offerId, onClose, onFavoriteToggle }:
   const [isFavorite, setIsFavorite] = useState(false);
   const [isImageExpanded, setIsImageExpanded] = useState(false);
 
-
+  // pobieranie oferty i ulubionych po załadowaniu komponentu
   useEffect(() => {
     async function fetchOffer() {
       try {
@@ -50,12 +53,14 @@ export default function OfferDetailModal({ offerId, onClose, onFavoriteToggle }:
         const offerData = await offerRes.json();
         setOffer(offerData);
 
+        // próbujemy sparsować JSON z opisu
         try {
           setParsedDetails(JSON.parse(offerData.description));
         } catch {
           setParsedDetails({ baseDescription: offerData.description });
         }
 
+        // sprawdzamy, czy oferta jest ulubiona
         if (favoritesRes?.ok) {
           const favorites = await favoritesRes.json();
           setIsFavorite(favorites.some((fav: { id: string }) => fav.id === offerId));
@@ -70,6 +75,7 @@ export default function OfferDetailModal({ offerId, onClose, onFavoriteToggle }:
     fetchOffer();
   }, [offerId, onClose, session]);
 
+  // wysyłanie wiadomości do autora oferty
   const handleSendMessage = async () => {
     if (!session) {
       alert("Musisz być zalogowany, aby wysłać wiadomość");
@@ -89,52 +95,38 @@ export default function OfferDetailModal({ offerId, onClose, onFavoriteToggle }:
     }
   };
 
+  // dodanie/odjęcie z ulubionych
   const toggleFavorite = async () => {
     if (!session) {
       router.push("/login");
       return;
     }
-  
     const nowFav = !isFavorite;
     const method = nowFav ? "POST" : "DELETE";
-  
     try {
       const res = await fetch("/api/favorites", {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ offerId }),
       });
-  
-      if (!res.ok) {
-        throw new Error("Błąd przy zmianie ulubionych");
-      }
-  
+      if (!res.ok) throw new Error("Błąd przy zmianie ulubionych");
       setIsFavorite(nowFav);
-  
-      if (onFavoriteToggle) {
-        onFavoriteToggle(offerId, nowFav);
-      }
+      if (onFavoriteToggle) onFavoriteToggle(offerId, nowFav);
     } catch (err) {
       console.error("Błąd:", err);
     }
   };
-  
 
+  // powiększanie zdjęcia
   const toggleImageExpand = () => {
     setIsImageExpanded(!isImageExpanded);
   };
 
-  if (loading) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="animate-pulse bg-white p-6 rounded-lg shadow-xl">
-          <div className="h-8 w-32 bg-gray-200 rounded mb-4"></div>
-          <div className="h-4 w-48 bg-gray-200 rounded"></div>
-        </div>
-      </div>
-    );
-  }
+  // ładowanie
+  if (loading) return null;
 
+
+  // fallback, gdy oferta nie istnieje
   if (!offer) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
@@ -155,6 +147,7 @@ export default function OfferDetailModal({ offerId, onClose, onFavoriteToggle }:
     );
   }
 
+  // zmienne pomocnicze
   const isFree = offer.price === 0;
   const date = offer.createdAt ? new Date(offer.createdAt).toLocaleDateString() : null;
   const pickupLocation = parsedDetails.location || offer.location;
@@ -342,6 +335,7 @@ export default function OfferDetailModal({ offerId, onClose, onFavoriteToggle }:
   );
 }
 
+// komponent do wyświetlania pary etykieta + wartość
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-gray-50 p-3 rounded-lg">

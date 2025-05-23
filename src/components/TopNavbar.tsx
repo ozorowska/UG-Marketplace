@@ -1,11 +1,10 @@
-"use client";
-
+"use client"; 
 import React, { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { FaBars, FaSearch, FaTimes, FaPlus } from "react-icons/fa";
 import NewOfferModal from "./NewOfferModal";
 
-
+// typ propsów – hamburger do otwierania sidebaru (mobile)
 interface TopNavbarProps {
   onHamburgerClick?: () => void;
 }
@@ -13,24 +12,24 @@ interface TopNavbarProps {
 export default function TopNavbar({ onHamburgerClick }: TopNavbarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [searchExpanded, setSearchExpanded] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(""); // stan dla zapytania
-  const [showNewOfferModal, setShowNewOfferModal] = useState(false);
 
-  // Funkcja obsługująca wyszukiwanie – przekierowuje do dashboardu z parametrem q
-  // Funkcja obsługująca wyszukiwanie – przekierowuje do dashboardu z parametrem q
-const handleSearch = () => {
-  if (searchQuery.trim()) {
-    router.push(`/dashboard?q=${encodeURIComponent(searchQuery)}`);
-  }
-};
+  const [searchExpanded, setSearchExpanded] = useState(false); // tryb rozwiniętego wyszukiwania (mobile)
+  const [searchQuery, setSearchQuery] = useState(""); // wpisywane zapytanie
+  const [showNewOfferModal, setShowNewOfferModal] = useState(false); // modal dodawania oferty
 
+  // przekierowanie do dashboardu z zapytaniem w URL
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      router.push(`/dashboard?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
 
   return (
     <>
-      {/* Mobile layout */}
+      {/* Navbar mobilny */}
       <header className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md shadow-lg border-b border-gray-200 z-50 md:hidden">
         <div className="px-4 py-3 flex items-center justify-between">
+          {/* przycisk hamburgera */}
           {onHamburgerClick && (
             <button
               onClick={onHamburgerClick}
@@ -41,6 +40,7 @@ const handleSearch = () => {
             </button>
           )}
 
+          {/* logo */}
           <h1
             className="text-xl font-bold text-[#002d73] cursor-pointer mx-2"
             onClick={() => router.push("/dashboard")}
@@ -48,6 +48,7 @@ const handleSearch = () => {
             UG Marketplace
           </h1>
 
+          {/* przycisk wyszukiwania lub pole wyszukiwania */}
           <div className="flex items-center">
             {!searchExpanded ? (
               <button
@@ -67,9 +68,7 @@ const handleSearch = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleSearch();
-                    }
+                    if (e.key === "Enter") handleSearch();
                   }}
                 />
                 <button
@@ -84,10 +83,10 @@ const handleSearch = () => {
         </div>
       </header>
 
-      {/* Desktop layout */}
+      {/* Navbar desktopowy */}
       <header className="hidden md:flex fixed top-0 left-0 right-0 bg-white shadow-md border-b z-50">
         <div className="flex items-center justify-between px-6 py-4 w-full">
-          {/* Logo */}
+          {/* logo */}
           <h1
             className="text-xl font-bold text-[#002d73] cursor-pointer"
             onClick={() => router.push("/dashboard")}
@@ -95,7 +94,7 @@ const handleSearch = () => {
             UG Marketplace
           </h1>
 
-          {/* Pasek wyszukiwania */}
+          {/* pasek wyszukiwania */}
           <div className="flex items-center w-full max-w-md">
             <input
               type="text"
@@ -104,14 +103,12 @@ const handleSearch = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleSearch();
-                }
+                if (e.key === "Enter") handleSearch();
               }}
             />
           </div>
 
-          {/* Przycisk dodawania oferty */}
+          {/* przycisk dodania nowej oferty */}
           <button
             onClick={() => setShowNewOfferModal(true)}
             className="bg-[#002d73] hover:bg-[#001a4f] text-white text-sm font-medium py-2 px-4 rounded-full transition-colors flex items-center"
@@ -122,18 +119,17 @@ const handleSearch = () => {
         </div>
       </header>
 
+      {/* modal dodawania nowej oferty */}
       {showNewOfferModal && (
         <NewOfferModal
-        onClose={() => setShowNewOfferModal(false)}
-        onOfferAdded={async () => {
-          if (pathname === "/dashboard") {
-            router.refresh(); // ← to odświeży dashboard bez przeładowywania strony
-          }
-        }}
-      />
-      
+          onClose={() => setShowNewOfferModal(false)}
+          onOfferAdded={async () => {
+            if (pathname === "/dashboard") {
+              router.refresh(); // odświeżenie danych (bez reloadu strony)
+            }
+          }}
+        />
       )}
-
     </>
   );
 }

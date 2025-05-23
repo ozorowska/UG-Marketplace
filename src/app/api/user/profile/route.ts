@@ -1,18 +1,19 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth";
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
+import type { NextRequest } from "next/server";
+import type { User } from "@prisma/client";
 
 export const runtime = "nodejs";
-const prisma = new PrismaClient();
 
-// Pobieranie listy dostępnych kierunków studiów z pliku JSON
-const getMajors = () => {
+
+// funkcja pomocnicza – wczytywanie kierunków studiów z pliku JSON
+const getMajors = (): { kierunek: string }[] => {
   try {
-    // Teraz plik jest w folderze 'public'
-    const majorsPath = path.join(process.cwd(), 'public', 'ug_majors.json');
-    const majorsData = fs.readFileSync(majorsPath, 'utf8');
+    const majorsPath = path.join(process.cwd(), "public", "ug_majors.json");
+    const majorsData = fs.readFileSync(majorsPath, "utf8");
     return JSON.parse(majorsData);
   } catch (error) {
     console.error("Błąd odczytu pliku z kierunkami:", error);
@@ -21,12 +22,13 @@ const getMajors = () => {
 };
 
 // GET /api/user/profile
-export async function GET(request) {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession();
-    if (!session || !session.user || !session.user.email) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: "Nieautoryzowany" }, { status: 401 });
     }
+
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       select: {
@@ -35,21 +37,18 @@ export async function GET(request) {
         name: true,
         major: true,
         image: true,
-        createdAt: true
-      }
+        createdAt: true,
+      },
     });
+
     if (!user) {
       return NextResponse.json({ error: "Nie znaleziono użytkownika" }, { status: 404 });
     }
 
-    // Pobierz kierunki studiów i wyślij tylko listę napisów
     const majorsRaw = getMajors();
     const majors = majorsRaw.map(item => item.kierunek);
 
-    return NextResponse.json({
-      user,
-      majors
-    }, { status: 200 });
+    return NextResponse.json({ user, majors }, { status: 200 });
   } catch (error) {
     console.error("Błąd w GET /api/user/profile:", error);
     return NextResponse.json({ error: "Błąd serwera" }, { status: 500 });
@@ -57,23 +56,26 @@ export async function GET(request) {
 }
 
 // POST /api/user/profile
-export async function POST(request) {
+export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession();
-    if (!session || !session.user || !session.user.email) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: "Nieautoryzowany" }, { status: 401 });
     }
-    const data = await request.json();
-    const updateData = {};
 
-    // Aktualizacja imienia, jeśli przesłano
-    if (data.name !== undefined) updateData.name = data.name;
+    const data: Partial<Pick<User, "name" | "major">> = await request.json();
+    const updateData: Partial<Pick<User, "name" | "major">> = {};
 
-    // Aktualizacja kierunku – walidacja
+    // aktualizacja imienia
+    if (data.name !== undefined) {
+      updateData.name = data.name;
+    }
+
+    // walidacja i aktualizacja kierunku studiów
     if (data.major !== undefined) {
-      // Pobierz tablicę dostępnych kierunków ze zaktualizowanego pliku JSON
       const majorsRaw = getMajors();
       const availableMajors = majorsRaw.map(item => item.kierunek);
+
       if (data.major && !availableMajors.includes(data.major)) {
         return NextResponse.json(
           { error: "Nieprawidłowy kierunek studiów" },
@@ -86,8 +88,15 @@ export async function POST(request) {
     const updatedUser = await prisma.user.update({
       where: { email: session.user.email },
       data: updateData,
-      select: { id: true, email: true, name: true, major: true, image: true }
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        major: true,
+        image: true,
+      },
     });
+
     return NextResponse.json(updatedUser, { status: 200 });
   } catch (error) {
     console.error("Błąd w POST /api/user/profile:", error);
@@ -95,7 +104,7 @@ export async function POST(request) {
   }
 }
 
-// PUT zachowujemy dla kompatybilności
-export async function PUT(request) {
+// PUT /api/user/profile – alias dla POST
+export async function PUT(request: NextRequest) {
   return POST(request);
 }
