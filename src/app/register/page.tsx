@@ -1,28 +1,30 @@
 "use client";
 
-import React, { useState, useEffect, FormEvent, JSX } from "react";
-import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
-import Image from "next/image";
+import { useState, useEffect, FormEvent } from "react";     
+import { useRouter } from "next/navigation";                
+import { useSession } from "next-auth/react";               
+import Image from "next/image";                             
+export default function RegisterPage() {
+  // pola formularza i stan komponentu
+  const [name, setName] = useState("");                    
+  const [email, setEmail] = useState("");                  
+  const [password, setPassword] = useState("");            
+  const [error, setError] = useState("");                  
+  const [termsAccepted, setTermsAccepted] = useState(false);  
+  const [showModal, setShowModal] = useState(false);       
 
-export default function RegisterPage(): JSX.Element {
-  const [name, setName] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [error, setError] = useState<string>("");
-  const [termsAccepted, setTermsAccepted] = useState<boolean>(false);
-  const [showModal, setShowModal] = useState<boolean>(false);
+  const router = useRouter();                              
+  const { data: session, status } = useSession();          
 
-  const router = useRouter();
-  const { data: session, status } = useSession();
-
+  // jeśli użytkownik jest już zalogowany, przekieruj na dashboard
   useEffect(() => {
     if (status === "authenticated") {
       router.push("/dashboard");
     }
   }, [status, router]);
 
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  // obsługa formularza rejestracji
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
 
@@ -54,7 +56,7 @@ export default function RegisterPage(): JSX.Element {
 
   return (
     <div className="min-h-screen flex">
-      {/* Lewa kolumna – formularz */}
+      {/* lewa kolumna – formularz */}
       <div className="w-full md:w-1/2 flex flex-col justify-center items-center p-8 bg-white">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
@@ -63,46 +65,38 @@ export default function RegisterPage(): JSX.Element {
           </div>
 
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+            {/* pola formularza */}
             <div className="rounded-md shadow-sm -space-y-px">
-              <div>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  required
-                  className="appearance-none rounded-t-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#002147] focus:border-[#002147] sm:text-sm"
-                  placeholder="Twoje imię"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
-              <div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#002147] focus:border-[#002147] sm:text-sm"
-                  placeholder="np. anna.kowalska@studms.ug.edu.pl"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  className="appearance-none rounded-b-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#002147] focus:border-[#002147] sm:text-sm"
-                  placeholder="Twoje hasło"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
+              <input
+                id="name"
+                type="text"
+                required
+                placeholder="Twoje imię"
+                className="appearance-none rounded-t-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#002147] focus:border-[#002147] sm:text-sm"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+              <input
+                id="email"
+                type="email"
+                required
+                placeholder="np. anna.kowalska@studms.ug.edu.pl"
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#002147] focus:border-[#002147] sm:text-sm"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <input
+                id="password"
+                type="password"
+                required
+                placeholder="Twoje hasło"
+                className="appearance-none rounded-b-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#002147] focus:border-[#002147] sm:text-sm"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
 
-            {/* Checkbox z regulaminem */}
+            {/* checkbox z regulaminem */}
             <div className="flex items-start text-sm mt-2">
               <input
                 id="terms"
@@ -123,31 +117,28 @@ export default function RegisterPage(): JSX.Element {
               </label>
             </div>
 
+            {/* komunikat błędu */}
             {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
-            <div>
-              <button
-                type="submit"
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-[#002147] hover:bg-[#001a3e] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#002147]"
-              >
-                Zarejestruj
-              </button>
-            </div>
-            
+            {/* przycisk rejestracji */}
+            <button
+              type="submit"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-[#002147] hover:bg-[#001a3e] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#002147]"
+            >
+              Zarejestruj
+            </button>
           </form>
 
+          {/* link do logowania */}
           <div className="flex items-center justify-center text-sm">
-            <a
-              href="/login"
-              className="font-medium text-[#002147] hover:text-[#001a3e]"
-            >
+            <a href="/login" className="font-medium text-[#002147] hover:text-[#001a3e]">
               Masz już konto? Zaloguj się
             </a>
           </div>
         </div>
       </div>
 
-      {/* Prawa kolumna – zdjęcie */}
+      {/* prawa kolumna – zdjęcie */}
       <div className="hidden md:flex w-1/2 relative">
         <Image
           src="/img/wzr1.jpg"
@@ -158,7 +149,13 @@ export default function RegisterPage(): JSX.Element {
         <div className="absolute inset-0 bg-[#002147] opacity-75"></div>
       </div>
 
-      {/* Modal z regulaminem */}
+      {/* modal z regulaminem */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-2xl max-h-[80vh] overflow-y-auto shadow-lg relative text-sm text-gray-700 space-y-4">
+            <h2 className="text-xl font-bold text-[#002147]">Regulamin korzystania z aplikacji UG Marketplace</h2>
+            
+           {/* Modal z regulaminem */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white rounded-xl p-6 max-w-2xl max-h-[80vh] overflow-y-auto shadow-lg relative text-sm text-gray-700 space-y-4">
@@ -239,6 +236,15 @@ export default function RegisterPage(): JSX.Element {
               </div>
             </div>
 
+            <button
+              className="mt-4 px-4 py-2 bg-[#002147] text-white rounded hover:bg-[#001a3e]"
+              onClick={() => setShowModal(false)}
+            >
+              Zamknij
+            </button>
+          </div>
+        </div>
+      )}
             <button
               className="mt-4 px-4 py-2 bg-[#002147] text-white rounded hover:bg-[#001a3e]"
               onClick={() => setShowModal(false)}
