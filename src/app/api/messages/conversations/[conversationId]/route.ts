@@ -1,17 +1,19 @@
-import { PrismaClient } from "@prisma/client";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
-const prisma = new PrismaClient();
-
-export async function GET(request) {
-  const url = new URL(request.url);
-  const conversationId = url.pathname.split("/").pop(); // Wyciągamy ID z URL-a
+// pobierz szczegóły pojedynczej konwersacji
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: { conversationId: string } }
+) {
+  const { conversationId } = params;
 
   if (!conversationId) {
     return NextResponse.json({ error: "Brak conversationId" }, { status: 400 });
   }
 
   try {
+    // znajdź konwersację po ID, razem z ofertą i użytkownikami
     const conversation = await prisma.conversation.findUnique({
       where: {
         id: conversationId,
@@ -45,7 +47,7 @@ export async function GET(request) {
       return NextResponse.json({ error: "Nie znaleziono konwersacji" }, { status: 404 });
     }
 
-    return NextResponse.json(conversation);
+    return NextResponse.json(conversation, { status: 200 });
   } catch (error) {
     console.error("Błąd podczas pobierania konwersacji:", error);
     return NextResponse.json({ error: "Błąd serwera" }, { status: 500 });

@@ -8,6 +8,7 @@ import SidebarLayout from "../../components/SidebarLayout";
 import { IoMdChatbubbles } from "react-icons/io";
 import { BsCheckAll, BsCheck } from "react-icons/bs";
 
+// typy pomocnicze
 interface Message {
   id: string;
   text: string;
@@ -50,79 +51,65 @@ export default function MessagesDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [loading, setLoading] = useState(true);
 
+  // przekierowanie do logowania jeśli brak sesji, pobranie konwersacji jeśli zalogowany
   useEffect(() => {
-    if (status === "loading") return;
-    if (!session) {
+    if (status !== "loading" && !session) {
       router.push("/login");
-      return;
+    } else if (status === "authenticated") {
+      fetchConversations();
     }
-    fetchConversations();
   }, [session, status, router]);
 
+  // pobierz konwersacje z API i posortuj
   const fetchConversations = async () => {
     try {
       const res = await fetch("/api/messages/conversations");
       if (!res.ok) throw new Error("Błąd pobierania rozmów");
-      const data = await res.json();
-
+      const data: Conversation[] = await res.json();
       const sessionUser = session?.user as SessionUser;
-
-      const sortedConversations = data.sort((a: Conversation, b: Conversation) => {
-        const aLast = a.messages[0];
-        const bLast = b.messages[0];
-
-        const aUnread = a.messages.filter(m => !m.read && m.senderId !== sessionUser.id).length;
-        const bUnread = b.messages.filter(m => !m.read && m.senderId !== sessionUser.id).length;
-
-        if (aUnread && !bUnread) return -1;
-        if (!aUnread && bUnread) return 1;
-
-        const aDate = new Date(aLast?.createdAt || a.updatedAt || a.createdAt);
-        const bDate = new Date(bLast?.createdAt || b.updatedAt || b.createdAt);
-
-        return bDate.getTime() - aDate.getTime();
-      });
-
-      setConversations(sortedConversations);
+      const sorted = sortConversations(data, sessionUser.id);
+      setConversations(sorted);
     } catch (error) {
       console.error("Błąd przy pobieraniu rozmów:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
+  // sortowanie wg liczby nieprzeczytanych i daty ostatniej wiadomości
+  const sortConversations = (data: Conversation[], sessionUserId: string) => {
+    return data.sort((a, b) => {
+      const aLast = a.messages[0];
+      const bLast = b.messages[0];
+      const aUnread = a.messages.filter(m => !m.read && m.senderId !== sessionUserId).length;
+      const bUnread = b.messages.filter(m => !m.read && m.senderId !== sessionUserId).length;
+      if (aUnread && !bUnread) return -1;
+      if (!aUnread && bUnread) return 1;
+      const aDate = new Date(aLast?.createdAt || a.updatedAt || a.createdAt);
+      const bDate = new Date(bLast?.createdAt || b.updatedAt || b.createdAt);
+      return bDate.getTime() - aDate.getTime();
+    });
+  };
+
+  // kliknięcie w konwersację przenosi do widoku czatu
   const handleConversationClick = (conversationId: string) => {
     router.push(`/messages/${conversationId}`);
   };
 
+  // formatowanie daty wiadomości
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-
     if (date.toDateString() === now.toDateString()) {
       return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     }
-
     const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
     if (diffDays < 7) {
       return date.toLocaleDateString([], { weekday: "short" });
     }
-
     return date.toLocaleDateString();
   };
 
-  const getOtherParticipant = (conversation: Conversation): User => {
-    if (!session) return { id: "", name: "Użytkownik" };
-    const sessionUser = session.user as SessionUser;
-    return sessionUser.id === conversation.buyer.id
-      ? conversation.seller
-      : conversation.buyer;
-  };
-
   if (!session) return null;
-
   const sessionUser = session.user as SessionUser;
 
   return (
@@ -132,17 +119,7 @@ export default function MessagesDashboard() {
         <div className="p-4 md:p-6">
           <h1 className="text-2xl font-bold mb-6 text-gray-800">Wiadomości</h1>
 
-          {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="animate-pulse flex space-x-4 w-full max-w-md">
-                <div className="rounded-full bg-slate-200 h-10 w-10"></div>
-                <div className="flex-1 space-y-4 py-1">
-                  <div className="h-4 bg-slate-200 rounded w-3/4"></div>
-                  <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-                </div>
-              </div>
-            </div>
-          ) : conversations.length === 0 ? (
+          {conversations.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl shadow-sm">
               <div className="bg-blue-50 p-4 rounded-full mb-4">
                 <IoMdChatbubbles className="text-blue-500" size={32} />
@@ -155,38 +132,23 @@ export default function MessagesDashboard() {
           ) : (
             <div className="space-y-3">
               {conversations.map((convo) => {
-                const unreadMessages = convo.messages.filter(
-                  (msg) => msg.senderId !== sessionUser.id && !msg.read
-                );
+                const unreadMessages = convo.messages.filter(m => m.senderId !== sessionUser.id && !m.read);
                 const unreadCount = unreadMessages.length;
                 const isRead = unreadCount === 0;
                 const lastMessage = convo.messages[0];
-                const otherUser = getOtherParticipant(convo);
 
                 return (
                   <div
                     key={convo.id}
                     onClick={() => handleConversationClick(convo.id)}
-                    className={`flex items-center p-4 rounded-lg shadow-sm hover:shadow transition-all cursor-pointer border ${
-                      !isRead ? "bg-blue-50 border-blue-100" : "bg-white border-gray-100"
-                    }`}
+                    className={`flex items-center p-4 rounded-lg shadow-sm hover:shadow transition-all cursor-pointer border ${!isRead ? "bg-blue-50 border-blue-100" : "bg-white border-gray-100"}`}
                   >
                     <div className="w-12 h-12 rounded-full bg-gray-100 flex-shrink-0 mr-4 overflow-hidden">
-                      {otherUser?.image ? (
-                        <img
-                          src={otherUser.image}
-                          alt={otherUser.name || "Użytkownik"}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : convo.offer.imageUrl ? (
-                        <img
-                          src={convo.offer.imageUrl}
-                          alt={convo.offer.title}
-                          className="w-full h-full object-cover"
-                        />
+                      {convo.offer.imageUrl ? (
+                        <img src={convo.offer.imageUrl} alt={convo.offer.title} className="w-full h-full object-cover" />
                       ) : (
                         <div className="flex items-center justify-center w-full h-full text-gray-500 bg-blue-50">
-                          {otherUser.name?.charAt(0).toUpperCase() || "?"}
+                          {convo.offer.title?.charAt(0).toUpperCase() || "?"}
                         </div>
                       )}
                     </div>
@@ -194,7 +156,7 @@ export default function MessagesDashboard() {
                     <div className="flex-grow overflow-hidden">
                       <div className="flex justify-between items-center mb-1">
                         <span className={`text-sm ${!isRead ? "text-black font-bold" : "text-gray-800"}`}>
-                          {otherUser.name || "Użytkownik"}
+                          {convo.offer.title || "Oferta"}
                         </span>
                         <span className="text-xs text-gray-400">
                           {lastMessage ? formatDate(lastMessage.createdAt) : formatDate(convo.createdAt)}
@@ -219,10 +181,6 @@ export default function MessagesDashboard() {
                             {unreadCount}
                           </span>
                         )}
-                      </div>
-
-                      <div className="mt-1">
-                        <span className="text-xs text-gray-400">{convo.offer.title}</span>
                       </div>
                     </div>
                   </div>

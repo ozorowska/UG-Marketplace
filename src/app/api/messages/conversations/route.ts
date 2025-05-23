@@ -1,19 +1,17 @@
-import { PrismaClient } from "@prisma/client";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { prisma } from "@/lib/prisma"; // globalna instancja prisma
 
-const prisma = new PrismaClient();
-
-// GET -> pobiera konwersacje dla zalogowanego usera
-export async function GET(request) {
+// pobiera konwersacje dla zalogowanego użytkownika
+export async function GET(_request: NextRequest) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(); // pobiera sesję użytkownika z next-auth
 
-    if (!session || !session.user || !session.user.email) {
-      return NextResponse.json({ error: "Nieautoryzowany" }, { status: 401 });
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Nieautoryzowany" }, { status: 401 }); // brak sesji lub e-maila
     }
 
-    // Znajdź usera po email
+    // znajdź użytkownika po emailu z sesji
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       select: { id: true },
@@ -23,20 +21,37 @@ export async function GET(request) {
       return NextResponse.json({ error: "Brak użytkownika" }, { status: 404 });
     }
 
-    // Pobierz konwersacje, gdzie user jest buyerem lub sellerem
+    // pobierz wszystkie konwersacje, w których user jest kupującym lub sprzedającym
     const convs = await prisma.conversation.findMany({
       where: {
         OR: [{ buyerId: user.id }, { sellerId: user.id }],
       },
       include: {
-        offer: { select: { title: true, imageUrl: true } },
-        buyer: { select: { id: true, name: true, image: true } },
-        seller: { select: { id: true, name: true, image: true } },
+        offer: {
+          select: {
+            title: true,
+            imageUrl: true,
+          },
+        },
+        buyer: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
+        seller: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
         messages: {
-          orderBy: { createdAt: "desc" },
+          orderBy: { createdAt: "desc" }, // najnowsze pierwsze
           where: {
             read: false,
-            NOT: { senderId: user.id }, // tylko wiadomości nieprzeczytane OD INNYCH
+            NOT: { senderId: user.id }, // tylko nieprzeczytane od innych
           },
         },
       },
@@ -50,11 +65,11 @@ export async function GET(request) {
   }
 }
 
-// POST -> rozpocznij nową konwersację
-export async function POST(request) {
+// tworzy nową konwersację między userem a właścicielem oferty
+export async function POST(request: NextRequest) {
   const session = await getServerSession();
 
-  if (!session || !session.user || !session.user.email) {
+  if (!session?.user?.email) {
     return NextResponse.json({ error: "Nieautoryzowany" }, { status: 401 });
   }
 
@@ -73,6 +88,7 @@ export async function POST(request) {
       return NextResponse.json({ error: "Użytkownik nie znaleziony" }, { status: 404 });
     }
 
+    // pobierz ofertę i jej właściciela
     const offer = await prisma.offer.findUnique({
       where: { id: offerId },
       include: { user: true },
@@ -82,12 +98,12 @@ export async function POST(request) {
       return NextResponse.json({ error: "Oferta nie istnieje" }, { status: 404 });
     }
 
-    // Zapobiegamy tworzeniu konwersacji z samym sobą
+    // nie pozwól użytkownikowi pisać do siebie samego
     if (offer.userId === user.id) {
       return NextResponse.json({ error: "Nie można wysłać wiadomości do samego siebie" }, { status: 400 });
     }
 
-    // Sprawdź, czy już istnieje taka konwersacja
+    // sprawdź, czy taka konwersacja już istnieje
     const existing = await prisma.conversation.findFirst({
       where: {
         offerId: offer.id,
@@ -100,7 +116,7 @@ export async function POST(request) {
       return NextResponse.json(existing, { status: 200 });
     }
 
-    // Utwórz nową konwersację
+    // utwórz nową konwersację
     const conversation = await prisma.conversation.create({
       data: {
         offerId: offer.id,

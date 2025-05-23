@@ -9,6 +9,7 @@ import SidebarLayout from "../../../components/SidebarLayout";
 import { IoArrowBack, IoSend } from "react-icons/io5";
 import { BsCheck, BsCheckAll, BsEmojiSmile } from "react-icons/bs";
 
+// typy danych
 interface Message {
   id: string;
   text: string;
@@ -52,18 +53,19 @@ export default function ChatPage() {
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState<Message[]>([]);
   const [conversation, setConversation] = useState<Conversation | null>(null);
-  const [isSending, setIsSending] = useState(false);
   const [otherUser, setOtherUser] = useState<User | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<HTMLInputElement>(null);
 
+  // przekierowanie do logowania jeśli brak sesji
   useEffect(() => {
     if (status !== "loading" && !session) {
       router.push("/login");
     }
   }, [session, status, router]);
-  
+
+  // pobierz szczegóły konwersacji i drugiego użytkownika
   useEffect(() => {
     async function fetchConversationDetails() {
       try {
@@ -82,6 +84,7 @@ export default function ChatPage() {
     if (session) fetchConversationDetails();
   }, [session, conversationId]);
 
+  // pobierz wiadomości i oznacz jako przeczytane
   useEffect(() => {
     async function fetchMessages() {
       try {
@@ -96,6 +99,7 @@ export default function ChatPage() {
     if (session) fetchMessages();
   }, [session, conversationId]);
 
+  // oznacz wiadomości jako przeczytane
   const markMessagesAsRead = async (messages: Message[]) => {
     if (!session) return;
     const sessionUser = session.user as SessionUser;
@@ -103,10 +107,11 @@ export default function ChatPage() {
     if (unread.length === 0) return;
     await fetch(`/api/messages/conversations/${conversationId}/read`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json" },
     });
   };
 
+  // nasłuch na nowe wiadomości i zmiany stanu "przeczytane"
   useEffect(() => {
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY as string, {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER as string,
@@ -130,13 +135,14 @@ export default function ChatPage() {
     };
   }, [conversationId, session]);
 
+  // przewiń na dół po załadowaniu wiadomości
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat]);
 
+  // wyślij wiadomość
   const sendMessage = async () => {
     if (!session || !message.trim()) return;
-    setIsSending(true);
     const sessionUser = session.user as SessionUser;
     const payload = { text: message.trim(), senderId: sessionUser.id };
     const res = await fetch(`/api/messages/conversations/${conversationId}/messages`, {
@@ -146,7 +152,6 @@ export default function ChatPage() {
     });
     if (res.ok) setMessage("");
     messageInputRef.current?.focus();
-    setIsSending(false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -220,7 +225,14 @@ export default function ChatPage() {
 
           <footer className="p-3 bg-white border-t border-gray-200 sticky bottom-0">
             <div className="flex items-center">
-              <div className="flex-1 mx-2 relative">
+              <div className="flex-1 flex items-center gap-2">
+                <button
+                  onClick={() => setShowEmojiPicker(prev => !prev)}
+                  className="p-2 rounded-full text-gray-500 hover:bg-gray-100"
+                  aria-label="Emoji"
+                >
+                  <BsEmojiSmile size={20} />
+                </button>
                 <input
                   ref={messageInputRef}
                   type="text"
@@ -228,43 +240,34 @@ export default function ChatPage() {
                   onChange={(e) => setMessage(e.target.value)}
                   onKeyDown={handleKeyPress}
                   placeholder="Wpisz wiadomość..."
-                  className="w-full border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <div className="absolute right-10 top-1/2 transform -translate-y-1/2">
-                  <button
-                    onClick={() => setShowEmojiPicker(prev => !prev)}
-                    className="p-1.5 rounded-full text-gray-500 hover:bg-gray-100"
-                    aria-label="Emoji"
-                  >
-                    <BsEmojiSmile size={18} />
-                  </button>
-                  {showEmojiPicker && (
-                    <div className="absolute bottom-12 right-0 z-50 bg-white border border-gray-200 rounded-lg p-2 shadow-md text-xl">
-                      {["😀", "😂", "😍", "👍", "🙏", "🎓", "😎"].map((emoji) => (
-                        <button
-                          key={emoji}
-                          className="p-1 hover:bg-gray-100 rounded"
-                          onClick={() => {
-                            setMessage(prev => prev + emoji);
-                            setShowEmojiPicker(false);
-                          }}
-                        >
-                          {emoji}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <button
+                  onClick={sendMessage}
+                  disabled={!message.trim()}
+                  className={`p-2.5 rounded-full ${message.trim() ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-200 text-gray-400"}`}
+                  aria-label="Wyślij"
+                >
+                  <IoSend size={20} />
+                </button>
               </div>
-              <button
-                onClick={sendMessage}
-                disabled={isSending || !message.trim()}
-                className={`p-2.5 rounded-full ${message.trim() && !isSending ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-200 text-gray-400"}`}
-                aria-label="Wyślij"
-              >
-                <IoSend size={20} />
-              </button>
             </div>
+            {showEmojiPicker && (
+              <div className="absolute bottom-20 left-4 z-50 bg-white border border-gray-200 rounded-lg p-2 shadow-md text-xl">
+                {["😀", "😂", "😍", "👍", "🙏", "🎓", "😎"].map((emoji) => (
+                  <button
+                    key={emoji}
+                    className="p-1 hover:bg-gray-100 rounded"
+                    onClick={() => {
+                      setMessage(prev => prev + emoji);
+                      setShowEmojiPicker(false);
+                    }}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            )}
           </footer>
         </div>
       </SidebarLayout>
