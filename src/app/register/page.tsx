@@ -80,7 +80,7 @@ export default function RegisterPage() {
                 id="email"
                 type="email"
                 required
-                placeholder="np. anna.kowalska@studms.ug.edu.pl"
+                placeholder="Twój e-mail w domenie studms.ug.edu.pl"
                 className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#002147] focus:border-[#002147] sm:text-sm"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}

@@ -109,7 +109,7 @@ export default function ProfilePage() {
       const customSession = session as CustomSession;
       customSession.user.name = name;
       
-      setSuccess("Name updated successfully!");
+      setSuccess("Zapisano imię!");
       setIsEditingName(false);
       
       router.refresh();
@@ -142,7 +142,7 @@ export default function ProfilePage() {
         ...session,
         user: { ...(session as CustomSession).user, major: selected },
       });
-      setSuccess("Major updated successfully!");
+      setSuccess("Zapisano kierunek!");
       router.refresh();
       setTimeout(() => setSuccess(""), 3000);
     } catch (e: any) {
@@ -186,7 +186,7 @@ export default function ProfilePage() {
         ...session,
         user: { ...(session as CustomSession).user, image: data.imageUrl },
       });
-      setSuccess("Profile image updated!");
+      setSuccess("Zaktualizowano zdjęcie profilowe!");
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -197,7 +197,7 @@ export default function ProfilePage() {
   // funkcja do zmiany hasła
   const changePassword = async () => {
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match");
+      setError("Hasła nie są takie same");
       return;
     }
     setIsLoading(true);
@@ -210,9 +210,9 @@ export default function ProfilePage() {
         body: JSON.stringify({ currentPassword, newPassword }),
       });
       if (!res.ok) {
-        throw new Error((await res.json()).error || "Error changing password");
+        throw new Error((await res.json()).error || "Błąd przy zmianie hasła");
       }
-      setSuccess("Password changed successfully!");
+      setSuccess("Zmieniono hasło!");
       // czyszczenie pól hasła po udanej zmianie
       setCurrentPassword("");
       setNewPassword("");
@@ -232,7 +232,7 @@ export default function ProfilePage() {
     try {
       const res = await fetch("/api/user/delete", { method: "DELETE" });
       if (!res.ok) {
-        throw new Error((await res.json()).error || "Error deleting account");
+        throw new Error((await res.json()).error || "Błąd przy usuwaniu konta.");
       }
       // wylogowanie i przekierowanie po usunięciu konta
       await signOut({ redirect: false });

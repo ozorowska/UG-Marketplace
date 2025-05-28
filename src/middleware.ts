@@ -1,16 +1,11 @@
 import { withAuth } from "next-auth/middleware"
 import { NextResponse } from "next/server"
 
-// middleware z autoryzacją next-auth
+// middleware z autoryzacją next-auth - WERSJA UPROSZCZONA
 export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token // token JWT z sesji next-auth
     const url = req.nextUrl // aktualny adres URL
-
-    // jeśli użytkownik jest zalogowany i próbuje wejść na /login lub /register → przekieruj na /dashboard
-    if (token && (url.pathname.startsWith("/login") || url.pathname.startsWith("/register"))) {
-      return NextResponse.redirect(new URL("/dashboard", req.url))
-    }
 
     // jeśli użytkownik nie jest zalogowany i próbuje wejść na chronione ścieżki → przekieruj na /login
     if (!token && (
@@ -34,10 +29,9 @@ export default withAuth(
 )
 
 // konfiguracja matcherów – ścieżki, które będą obsługiwane przez middleware
+
 export const config = {
   matcher: [
-    "/login",
-    "/register",
     "/dashboard/:path*",
     "/myoffers/:path*",
     "/favorites/:path*",
